@@ -13,6 +13,9 @@
         <v-btn v-else color="primary" size="large" to="/dashboard">
           Dashboard
         </v-btn>
+        <v-btn color="secondary" size="large" to="/test" class="ml-2">
+          Test DB
+        </v-btn>
       </v-col>
     </v-row>
   </v-container>
