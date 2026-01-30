@@ -2,11 +2,21 @@
 -- Execute in order: tables are arranged by dependency
 
 -- ============================================
+-- Drop all tables (reverse dependency order)
+-- ============================================
+DROP TABLE IF EXISTS article_tags CASCADE;
+DROP TABLE IF EXISTS article_media CASCADE;
+DROP TABLE IF EXISTS tag_types CASCADE;
+DROP TABLE IF EXISTS articles CASCADE;
+
+-- ============================================
 -- Table: articles
 -- ============================================
 CREATE TABLE articles (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     title           VARCHAR(255) NOT NULL,
+    body            TEXT,
+    indicator       INTEGER DEFAULT 0,
     source          VARCHAR(255) NOT NULL,
     created_at      TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     language_code   VARCHAR(5) NOT NULL
