@@ -13,8 +13,9 @@
         <v-btn v-else color="primary" size="large" to="/dashboard">
           Dashboard
         </v-btn>
-        <v-btn color="secondary" size="large" to="/test" class="ml-2">
-          Test DB
+        <v-btn color="error" size="large" to="/live" class="ml-2">
+          <v-icon start>mdi-broadcast</v-icon>
+          Live Feed
         </v-btn>
       </v-col>
     </v-row>

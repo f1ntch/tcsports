@@ -20,9 +20,9 @@ const routes = [
     meta: { auth: true }
   },
   {
-    path: '/test',
-    name: 'test',
-    component: () => import('@/views/Test.vue')
+    path: '/live',
+    name: 'live',
+    component: () => import('@/views/LiveFeed.vue')
   }
 ]
 
@@ -48,4 +48,3 @@ router.beforeEach(async (to) => {
 })
 
 export default router
-
