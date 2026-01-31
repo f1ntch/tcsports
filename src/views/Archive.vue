@@ -73,7 +73,7 @@
       </template>
 
       <div v-else class="flex flex-col items-center rounded-xl border border-border bg-card py-12 text-center">
-        <ArchiveOff class="mb-4 h-16 w-16 text-muted-foreground" />
+        <ArchiveX class="mb-4 h-16 w-16 text-muted-foreground" />
         <h2 class="mb-2 text-xl font-semibold">{{ t.archive.emptyTitle }}</h2>
         <p class="mx-auto mb-6 max-w-md text-muted-foreground">{{ t.archive.emptyDesc }}</p>
         <router-link
@@ -89,7 +89,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { Archive, ArchiveOff, Calendar, Clock, Trash2, Loader2 } from 'lucide-vue-next'
+import { Archive, ArchiveX, Calendar, Clock, Trash2, Loader2 } from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
 import { useLanguage } from '@/composables/useLanguage'
 import { useAuthStore } from '@/stores/auth'
