@@ -246,7 +246,7 @@ async function fetchArticle() {
   const { data, error } = await supabase
     .from('articles_processed')
     .select(`
-      id, article_id, title, summary, created_at,
+      id, article_id, title, summary, created_at, image_url,
       articles!inner (
         id, body, source, sport_id,
         sports ( id, name )
@@ -264,7 +264,7 @@ async function fetchArticle() {
       content: data.articles?.body || '',
       createdAt: data.created_at,
       sport: data.articles?.sports || { id: null, name: 'Unknown' },
-      imageUrl: getSportImage(data.articles?.sports?.name),
+      imageUrl: data.image_url || getSportImage(data.articles?.sports?.name),
       author: data.articles?.source || 'TC Sports',
       tags: []
     }
@@ -292,7 +292,7 @@ async function fetchRelated(sportId, excludeId) {
   const { data } = await supabase
     .from('articles_processed')
     .select(`
-      article_id, title, created_at,
+      article_id, title, created_at, image_url,
       articles!inner ( sport_id, sports ( name ) )
     `)
     .eq('language_code', lang)
@@ -305,7 +305,7 @@ async function fetchRelated(sportId, excludeId) {
       id: item.article_id,
       title: item.title,
       createdAt: item.created_at,
-      imageUrl: getSportImage(item.articles?.sports?.name)
+      imageUrl: item.image_url || getSportImage(item.articles?.sports?.name)
     }))
   }
 }
