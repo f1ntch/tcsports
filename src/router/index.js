@@ -23,7 +23,6 @@ const routes = [
     path: "/article/:id",
     name: "article",
     component: () => import("@/views/ArticleDetail.vue"),
-    meta: { auth: true },
   },
   {
     path: "/live",

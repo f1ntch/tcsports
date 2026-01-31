@@ -1,30 +1,244 @@
 <template>
-  <v-container class="fill-height">
-    <v-row justify="center" align="center">
-      <v-col cols="12" md="8" class="text-center">
-        <h1 class="text-h2 font-weight-bold mb-4">TC Sports</h1>
-        <p class="text-h6 text-medium-emphasis mb-8">Your sports platform</p>
-        <v-alert v-if="!isSupabaseConfigured" type="warning" class="mb-6">
-          Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env
+  <div class="home-page">
+    <v-container class="home py-6">
+      <header class="text-center mb-8">
+        <h1 class="text-h3 font-weight-bold text-primary">TC Sports</h1>
+        <p class="text-body-1 text-medium-emphasis mt-2">Your sports platform</p>
+      </header>
+
+      <v-alert v-if="!isSupabaseConfigured" type="warning" class="mb-6">
+        Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env
+      </v-alert>
+
+      <section class="articles-section">
+        <h2 class="text-h6 font-weight-medium mb-4 text-medium-emphasis">
+          Recent articles
+        </h2>
+
+        <v-progress-linear
+          v-if="articlesStore.loading"
+          indeterminate
+          color="primary"
+          class="mb-4 rounded"
+        />
+
+        <v-alert
+          v-else-if="articlesStore.articles.length === 0"
+          type="info"
+          variant="tonal"
+          rounded="lg"
+          class="mb-4"
+        >
+          No articles yet.
         </v-alert>
-        <v-btn v-if="!auth.user" color="primary" size="large" to="/login">
-          Get Started
-        </v-btn>
-        <v-btn v-else color="primary" size="large" to="/dashboard">
-          Dashboard
-        </v-btn>
-        <v-btn color="error" size="large" to="/live" class="ml-2">
-          <v-icon start>mdi-broadcast</v-icon>
-          Live Feed
-        </v-btn>
-      </v-col>
-    </v-row>
-  </v-container>
+
+        <div v-else class="articles-list">
+          <article
+            v-for="article in articlesStore.articles"
+            :key="article.id"
+            class="article-card"
+          >
+            <div
+              class="article-card__wrap"
+              role="button"
+              tabindex="0"
+              @click="goToArticle(article.id)"
+              @keydown.enter="goToArticle(article.id)"
+              @keydown.space.prevent="goToArticle(article.id)"
+            >
+              <v-card
+                variant="flat"
+                rounded="lg"
+                class="article-card__inner pa-4"
+                elevation="0"
+              >
+                <h3 class="article-card__title text-h6 font-weight-medium mb-1">
+                  {{ article.title }}
+                </h3>
+                <span
+                  class="article-card__date text-caption text-medium-emphasis mb-2 d-block"
+                >
+                  {{ formatDate(article.created_at) }}
+                </span>
+                <div class="d-flex align-center flex-wrap gap-2 mb-2">
+                  <v-chip
+                    v-if="article.source"
+                    size="small"
+                    color="primary"
+                    variant="tonal"
+                    rounded="pill"
+                  >
+                    {{ article.source }}
+                  </v-chip>
+                  <v-chip
+                    v-if="article.sports?.name"
+                    size="small"
+                    color="primary"
+                    variant="tonal"
+                    rounded="pill"
+                  >
+                    {{ article.sports.name }}
+                  </v-chip>
+                </div>
+              </v-card>
+            </div>
+          </article>
+
+          <div ref="sentinelRef" class="scroll-sentinel" aria-hidden="true" />
+
+          <div
+            v-if="articlesStore.loadingMore"
+            class="d-flex justify-center py-6"
+          >
+            <v-progress-circular indeterminate color="primary" size="32" />
+          </div>
+          <p
+            v-else-if="
+              articlesStore.articles.length > 0 && !articlesStore.hasMore()
+            "
+            class="text-center text-caption text-medium-emphasis py-4"
+          >
+            You've seen all {{ articlesStore.totalCount }} articles.
+          </p>
+        </div>
+      </section>
+    </v-container>
+
+    <v-btn
+      class="fab-get-newest"
+      color="primary"
+      size="small"
+      variant="flat"
+      rounded="pill"
+      :loading="articlesStore.loading"
+      @click="refreshArticles"
+    >
+      Get Newest
+    </v-btn>
+  </div>
 </template>
 
 <script setup>
-import { useAuthStore } from '@/stores/auth'
-import { isSupabaseConfigured } from '@/lib/supabase'
-const auth = useAuthStore()
+import { onMounted, onUnmounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import { useArticlesStore } from "@/stores/articles";
+import { isSupabaseConfigured } from "@/lib/supabase";
+
+const articlesStore = useArticlesStore();
+const router = useRouter();
+const sentinelRef = ref(null);
+
+let observer = null;
+
+function setupObserver() {
+  if (observer || !sentinelRef.value) return;
+  observer = new IntersectionObserver(
+    (entries) => {
+      const [entry] = entries;
+      if (
+        entry?.isIntersecting &&
+        articlesStore.hasMore() &&
+        !articlesStore.loading &&
+        !articlesStore.loadingMore
+      ) {
+        articlesStore.fetchNextPage();
+      }
+    },
+    { rootMargin: "200px", threshold: 0 },
+  );
+  observer.observe(sentinelRef.value);
+}
+
+onMounted(() => {
+  articlesStore.fetchArticles(1, 20);
+});
+
+watch(
+  sentinelRef,
+  (el) => {
+    if (el) setupObserver();
+  },
+  { flush: "post" },
+);
+
+onUnmounted(() => {
+  observer?.disconnect();
+});
+
+function formatDate(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { dateStyle: "medium" });
+}
+
+function goToArticle(id) {
+  router.push({ name: "article", params: { id: String(id) } });
+}
+
+async function refreshArticles() {
+  await articlesStore.fetchArticles(1, 20);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 </script>
 
+<style scoped>
+.home-page {
+  position: relative;
+  padding-bottom: 4rem;
+}
+
+.home {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.fab-get-newest {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.articles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.article-card__wrap {
+  cursor: pointer;
+  border-radius: 8px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
+}
+
+.article-card__wrap:hover {
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.15),
+    0 0 0 2px #00dc82,
+    0 6px 28px rgba(0, 220, 130, 0.4);
+  transform: translateY(-2px);
+}
+
+.article-card__inner {
+  box-shadow: none !important;
+}
+
+.article-card__title {
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+}
+
+.scroll-sentinel {
+  height: 1px;
+  width: 100%;
+  pointer-events: none;
+}
+</style>
