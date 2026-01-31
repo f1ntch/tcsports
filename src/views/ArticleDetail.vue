@@ -47,12 +47,14 @@
           <h1 class="article-detail__title text-h4 font-weight-bold">
             {{ article.title }}
           </h1>
-          <p
+          <div
             v-if="article.source"
-            class="article-detail__source text-body-1 text-medium-emphasis mt-2"
+            class="d-flex align-center flex-wrap gap-2 mt-2"
           >
-            {{ article.source }}
-          </p>
+            <v-chip size="small" color="primary" variant="tonal" rounded="pill">
+              {{ article.source }}
+            </v-chip>
+          </div>
         </header>
 
         <section v-if="media.length" class="article-detail__media mb-6">

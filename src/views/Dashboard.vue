@@ -41,47 +41,50 @@
             :key="article.id"
             class="article-card"
           >
-            <v-card
-              variant="elevated"
-              rounded="lg"
-              class="article-card__inner pa-4"
-              elevation="0"
+            <div
+              class="article-card__wrap"
               role="button"
               tabindex="0"
               @click="goToArticle(article.id)"
               @keydown.enter="goToArticle(article.id)"
               @keydown.space.prevent="goToArticle(article.id)"
             >
-              <div
-                class="d-flex flex-column flex-sm-row justify-space-between align-start gap-2 mb-2"
+              <v-card
+                variant="flat"
+                rounded="lg"
+                class="article-card__inner pa-4"
+                elevation="0"
               >
-                <h3 class="article-card__title text-h6 font-weight-medium">
+                <h3 class="article-card__title text-h6 font-weight-medium mb-1">
                   {{ article.title }}
                 </h3>
                 <span
-                  class="article-card__date text-caption text-medium-emphasis flex-shrink-0"
+                  class="article-card__date text-caption text-medium-emphasis mb-2 d-block"
                 >
                   {{ formatDate(article.created_at) }}
                 </span>
-              </div>
-              <p
-                v-if="article.source"
-                class="article-card__source text-body-2 text-medium-emphasis mb-3"
-              >
-                {{ article.source }}
-              </p>
-              <div class="d-flex align-center flex-wrap gap-2">
-                <v-chip
-                  v-if="article.sports?.name"
-                  size="small"
-                  color="primary"
-                  variant="tonal"
-                  rounded="pill"
-                >
-                  {{ article.sports.name }}
-                </v-chip>
-              </div>
-            </v-card>
+                <div class="d-flex align-center flex-wrap gap-2 mb-2">
+                  <v-chip
+                    v-if="article.source"
+                    size="small"
+                    color="primary"
+                    variant="tonal"
+                    rounded="pill"
+                  >
+                    {{ article.source }}
+                  </v-chip>
+                  <v-chip
+                    v-if="article.sports?.name"
+                    size="small"
+                    color="primary"
+                    variant="tonal"
+                    rounded="pill"
+                  >
+                    {{ article.sports.name }}
+                  </v-chip>
+                </div>
+              </v-card>
+            </div>
           </article>
 
           <div ref="sentinelRef" class="scroll-sentinel" aria-hidden="true" />
@@ -214,19 +217,27 @@ async function handleSignOut() {
   gap: 1rem;
 }
 
-.article-card__inner {
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  transition:
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.article-card__inner {
+.article-card__wrap {
   cursor: pointer;
+  border-radius: 8px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
 }
 
-.article-card__inner:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+.article-card__wrap:hover {
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.15),
+    0 0 0 2px #00dc82,
+    0 6px 28px rgba(0, 220, 130, 0.4);
+  transform: translateY(-2px);
+}
+
+.article-card__inner {
+  box-shadow: none !important;
 }
 
 .article-card__title {
