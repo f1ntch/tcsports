@@ -13,14 +13,14 @@
             <h2 class="text-lg font-semibold">{{ t.profile.accountInfo }}</h2>
           </div>
           <p class="mb-4 text-sm text-muted-foreground">{{ t.profile.accountInfoDesc }}</p>
-          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-4 sm:grid-cols-2">
             <div>
               <p class="text-xs text-muted-foreground">{{ t.profile.fullName }}</p>
-              <p class="font-medium">{{ mockUser.fullName }}</p>
+              <p class="font-medium">{{ user.fullName }}</p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">{{ t.profile.email }}</p>
-              <p class="font-medium">{{ mockUser.email }}</p>
+              <p class="font-medium">{{ user.email }}</p>
             </div>
           </div>
         </div>
@@ -118,17 +118,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { User, Lock, Check, Eye, EyeOff } from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
 import { useLanguage } from '@/composables/useLanguage'
+import { useAuthStore } from '@/stores/auth'
+import { supabase } from '@/lib/supabase'
 
 const { t } = useLanguage()
+const auth = useAuthStore()
 
-const mockUser = {
-  email: 'user@example.com',
-  fullName: 'John Doe',
-}
+const user = computed(() => ({
+  email: auth.user?.email || 'Not logged in',
+  fullName: auth.user?.user_metadata?.full_name || auth.user?.email?.split('@')[0] || 'User',
+}))
 
 const currentPassword = ref('')
 const newPassword = ref('')
@@ -141,13 +144,13 @@ const error = ref('')
 const success = ref(false)
 
 const handleChangePassword = async () => {
-  if (!currentPassword.value || !newPassword.value || !confirmPassword.value) return
+  if (!newPassword.value || !confirmPassword.value) return
   if (newPassword.value.length < 8) {
-    error.value = t.profile.passwordMinLength
+    error.value = t.value.profile?.passwordMinLength || 'Password must be at least 8 characters'
     return
   }
   if (newPassword.value !== confirmPassword.value) {
-    error.value = t.profile.passwordsNoMatch
+    error.value = t.value.profile?.passwordsNoMatch || 'Passwords do not match'
     return
   }
 
@@ -155,13 +158,22 @@ const handleChangePassword = async () => {
   success.value = false
   loading.value = true
 
-  await new Promise((r) => setTimeout(r, 1000))
-
-  loading.value = false
-  success.value = true
-  currentPassword.value = ''
-  newPassword.value = ''
-  confirmPassword.value = ''
-  setTimeout(() => (success.value = false), 3000)
+  try {
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword.value
+    })
+    
+    if (updateError) throw updateError
+    
+    success.value = true
+    currentPassword.value = ''
+    newPassword.value = ''
+    confirmPassword.value = ''
+    setTimeout(() => (success.value = false), 3000)
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    loading.value = false
+  }
 }
 </script>

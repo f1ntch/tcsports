@@ -14,6 +14,10 @@
         </div>
       </div>
 
+      <div v-else-if="loadingSports" class="flex justify-center py-16">
+        <Loader2 class="h-12 w-12 animate-spin text-primary" />
+      </div>
+
       <template v-else>
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <button
@@ -29,7 +33,7 @@
             @click="toggleSport(sport.id)"
           >
             <div class="mb-4 flex items-center justify-between">
-              <span class="font-semibold">{{ getSportName(sport.nameKey) }}</span>
+              <span class="font-semibold">{{ sport.name }}</span>
               <div
                 class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
                 :class="isSelected(sport.id) ? 'border-primary bg-primary' : 'border-muted-foreground/30'"
@@ -61,35 +65,51 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { CheckCircle, Check } from 'lucide-vue-next'
+import { CheckCircle, Check, Loader2 } from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
 import { useLanguage } from '@/composables/useLanguage'
+import { useAuthStore } from '@/stores/auth'
+import { supabase } from '@/lib/supabase'
 
 const router = useRouter()
+const auth = useAuthStore()
 const { t } = useLanguage()
 
+const sports = ref([])
 const selectedSports = ref([])
 const loading = ref(false)
+const loadingSports = ref(true)
 const saved = ref(false)
 
-const sports = [
-  { id: 1, nameKey: 'football', description: 'Soccer leagues and tournaments worldwide' },
-  { id: 2, nameKey: 'basketball', description: 'NBA, EuroLeague, and international basketball' },
-  { id: 3, nameKey: 'tennis', description: 'Grand Slams, ATP, and WTA tours' },
-  { id: 4, nameKey: 'cycling', description: "Tour de France, Giro d'Italia, and more" },
-  { id: 5, nameKey: 'swimming', description: 'Olympics, World Championships, and swimming news' },
-  { id: 6, nameKey: 'formula1', description: 'F1 races, teams, and drivers' },
-  { id: 7, nameKey: 'golf', description: 'PGA Tour, majors, and golf news' },
-  { id: 8, nameKey: 'rugby', description: 'Six Nations, World Cup, and rugby leagues' },
-  { id: 9, nameKey: 'baseball', description: 'MLB and international baseball leagues' },
-  { id: 10, nameKey: 'hockey', description: 'NHL and international ice hockey' },
-  { id: 11, nameKey: 'volleyball', description: 'International volleyball and beach volleyball' },
-  { id: 12, nameKey: 'boxing', description: 'Boxing matches, fighters, and news' },
-]
+async function fetchSports() {
+  const { data } = await supabase
+    .from('sports')
+    .select('id, name')
+    .order('name')
+  
+  if (data) {
+    sports.value = data.map(s => ({
+      id: s.id,
+      name: s.name,
+      description: `Follow ${s.name} news and updates`
+    }))
+  }
+  loadingSports.value = false
+}
 
-const getSportName = (nameKey) => t.value.sports[nameKey] || nameKey
+async function fetchUserInterests() {
+  if (!auth.user) return
+  const { data } = await supabase
+    .from('user_interests')
+    .select('sport_id')
+    .eq('user_id', auth.user.id)
+  
+  if (data) {
+    selectedSports.value = data.map(d => d.sport_id)
+  }
+}
 
 const isSelected = (id) => selectedSports.value.includes(id)
 
@@ -103,11 +123,30 @@ const toggleSport = (id) => {
 }
 
 const handleSave = async () => {
-  if (!selectedSports.value.length) return
+  if (!selectedSports.value.length || !auth.user) return
   loading.value = true
-  await new Promise((r) => setTimeout(r, 1500))
+
+  // Delete existing interests
+  await supabase
+    .from('user_interests')
+    .delete()
+    .eq('user_id', auth.user.id)
+
+  // Insert new interests
+  const inserts = selectedSports.value.map(sportId => ({
+    user_id: auth.user.id,
+    sport_id: sportId
+  }))
+  
+  await supabase.from('user_interests').insert(inserts)
+
   loading.value = false
   saved.value = true
   setTimeout(() => router.push({ name: 'home' }), 2000)
 }
+
+onMounted(() => {
+  fetchSports()
+  fetchUserInterests()
+})
 </script>

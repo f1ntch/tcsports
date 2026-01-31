@@ -2,7 +2,7 @@
   <div class="flex min-h-screen w-full">
     <!-- Sidebar -->
     <aside
-      class="hidden md:flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200"
+      class="relative z-30 hidden md:flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200"
       :class="rail ? 'w-16' : 'w-64'"
     >
       <div class="flex flex-col gap-2 p-4">
@@ -59,40 +59,6 @@
       <div class="mx-2 h-px bg-sidebar-border" />
 
       <div class="flex flex-col gap-2 p-4">
-        <div v-if="!rail" class="mb-4 flex items-center justify-between">
-          <span class="text-xs text-sidebar-foreground/70">{{ t.nav.theme }}</span>
-          <div class="flex rounded-md border border-sidebar-border p-0.5">
-            <button
-              type="button"
-              class="rounded p-1.5 transition-colors"
-              :class="!isDark ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent'"
-              @click="setTheme(false)"
-              aria-label="Light theme"
-            >
-              <Sun class="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              class="rounded p-1.5 transition-colors"
-              :class="isDark ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent'"
-              @click="setTheme(true)"
-              aria-label="Dark theme"
-            >
-              <Moon class="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-        <button
-          v-else
-          type="button"
-          class="mx-auto rounded-md p-2 hover:bg-sidebar-accent"
-          @click="toggleTheme"
-          aria-label="Toggle theme"
-        >
-          <Sun class="h-4 w-4 dark:hidden" />
-          <Moon class="h-4 w-4 hidden dark:block" />
-        </button>
-
         <div v-if="auth.user" class="relative">
           <button
             type="button"
@@ -331,6 +297,60 @@
 
     <!-- Main content -->
     <div class="flex flex-1 flex-col">
+      <!-- Top bar -->
+      <header class="sticky top-0 z-20 hidden border-b border-border bg-background md:block">
+        <div class="container mx-auto flex h-12 items-center justify-end gap-4 px-4">
+          <!-- Language selector -->
+          <div class="relative">
+            <button
+              type="button"
+              class="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-xs hover:bg-accent"
+              @click="topLangOpen = !topLangOpen"
+            >
+              <Globe class="h-4 w-4" />
+              <span>{{ currentLangName }}</span>
+            </button>
+            <div
+              v-if="topLangOpen"
+              class="absolute right-0 top-full z-10 mt-1 min-w-[120px] rounded-md border border-border bg-popover p-1 shadow-lg"
+            >
+              <button
+                v-for="lang in languages"
+                :key="lang.code"
+                type="button"
+                class="flex w-full items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-accent"
+                @click="setLanguage(lang.code); topLangOpen = false"
+              >
+                {{ lang.name }}
+                <Check v-if="language === lang.code" class="h-4 w-4 text-primary" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Theme toggle -->
+          <div class="flex items-center gap-1 rounded-md border border-input p-0.5">
+            <button
+              type="button"
+              class="rounded p-1.5 transition-colors"
+              :class="!isDark ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'"
+              @click="setTheme(false)"
+              aria-label="Light theme"
+            >
+              <Sun class="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              class="rounded p-1.5 transition-colors"
+              :class="isDark ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'"
+              @click="setTheme(true)"
+              aria-label="Dark theme"
+            >
+              <Moon class="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </header>
+
       <main class="flex-1">
         <slot />
       </main>
@@ -389,11 +409,18 @@ const mobileMenuOpen = ref(false)
 const userMenuOpen = ref(false)
 const langMenuOpen = ref(false)
 const langMenuRef = ref(null)
+const topLangOpen = ref(false)
+
+const currentLangName = computed(() => {
+  const lang = languages.find(l => l.code === language.value)
+  return lang?.name || 'EN'
+})
 
 const closeMenus = (e) => {
   if (!e.target.closest('.relative')) {
     userMenuOpen.value = false
     langMenuOpen.value = false
+    topLangOpen.value = false
   }
 }
 

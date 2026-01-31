@@ -18,30 +18,36 @@
         </div>
         <select
           v-model="selectedSport"
-          class="flex h-9 max-w-[200px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="flex h-9 max-w-[200px] rounded-md border border-input bg-card px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <option v-for="opt in sportOptions" :key="opt.id" :value="opt.id">{{ opt.name }}</option>
+          <option v-for="opt in sportOptions" :key="opt.id" :value="opt.id" class="bg-card text-card-foreground">{{ opt.name }}</option>
         </select>
       </div>
 
-      <template v-if="filteredArticles.length">
+      <div v-if="loading" class="flex justify-center py-16">
+        <Loader2 class="h-12 w-12 animate-spin text-primary" />
+      </div>
+
+      <template v-else-if="filteredArticles.length">
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <router-link
             v-for="article in filteredArticles"
             :key="article.id"
             :to="{ name: 'article', params: { id: article.id } }"
-            class="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-colors hover:border-primary/50 hover:shadow-md"
+            class="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:border-primary hover:shadow-lg"
           >
             <div class="relative aspect-video overflow-hidden bg-muted">
-              <img :src="article.imageUrl" :alt="article.title" class="h-full w-full object-cover" />
-              <span class="absolute left-3 top-3 rounded-md bg-card/90 px-2 py-0.5 text-xs font-medium">
-                {{ getSportName(article.sport.nameKey) }}
-              </span>
-              <span class="absolute bottom-3 left-3 rounded-md bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
-                {{ getRelativeTime(article.createdAt) }}
+              <img :src="article.imageUrl" :alt="article.title" class="h-full w-full object-cover transition-transform group-hover:scale-105" />
+              <span class="absolute left-3 top-3 rounded-md bg-card/90 px-2 py-0.5 text-xs font-medium text-card-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                {{ getSportName(article.sport) }}
               </span>
             </div>
             <div class="flex flex-1 flex-col p-4">
+              <div class="mb-2 flex items-center gap-2">
+                <span class="rounded bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+                  {{ getRelativeTime(article.createdAt) }}
+                </span>
+              </div>
               <h2 class="mb-2 line-clamp-2 text-lg font-semibold text-card-foreground group-hover:text-primary">
                 {{ article.title }}
               </h2>
@@ -80,98 +86,141 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { Search, Calendar, Clock } from 'lucide-vue-next'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { Search, Calendar, Clock, Loader2 } from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
 import { useLanguage } from '@/composables/useLanguage'
+import { supabase } from '@/lib/supabase'
 
-const { t } = useLanguage()
+const { t, language } = useLanguage()
 
 const searchQuery = ref('')
 const selectedSport = ref('all')
+const articles = ref([])
+const sports = ref([])
+const loading = ref(true)
+let refreshInterval = null
 
-const mockArticles = [
-  {
-    id: '1',
-    title: 'Champions League Final: Epic Showdown in Istanbul',
-    summary: 'Two European giants clash in what promises to be one of the most exciting finals in recent memory.',
-    createdAt: '2026-01-30T20:30:00Z',
-    sport: { id: '1', nameKey: 'football' },
-    imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
-  },
-  {
-    id: '2',
-    title: 'NBA All-Star Weekend: Records Shattered',
-    summary: "The annual showcase of basketball's finest talents delivered unforgettable moments.",
-    createdAt: '2026-01-30T18:15:00Z',
-    sport: { id: '2', nameKey: 'basketball' },
-    imageUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80',
-  },
-  {
-    id: '3',
-    title: 'Australian Open: Underdog Reaches Semi-Finals',
-    summary: 'In a stunning upset, the unseeded player defeats the world number two in straight sets.',
-    createdAt: '2026-01-30T14:45:00Z',
-    sport: { id: '3', nameKey: 'tennis' },
-    imageUrl: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80',
-  },
-  {
-    id: '4',
-    title: 'Tour de France Route Announced for 2026',
-    summary: 'The legendary race will feature more mountain stages than ever before.',
-    createdAt: '2026-01-30T12:00:00Z',
-    sport: { id: '4', nameKey: 'cycling' },
-    imageUrl: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80',
-  },
-  {
-    id: '5',
-    title: 'Swimming World Championships: New World Record Set',
-    summary: 'The 100m freestyle record that stood for over a decade has finally been broken.',
-    createdAt: '2026-01-29T22:30:00Z',
-    sport: { id: '5', nameKey: 'swimming' },
-    imageUrl: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800&q=80',
-  },
-  {
-    id: '6',
-    title: 'F1 Pre-Season Testing: Surprising Early Pace',
-    summary: 'The newly restructured team shows unexpected speed during testing in Bahrain.',
-    createdAt: '2026-01-29T19:00:00Z',
-    sport: { id: '6', nameKey: 'formula1' },
-    imageUrl: 'https://images.unsplash.com/photo-1541348263662-e068662d82af?w=800&q=80',
-  },
-]
+async function fetchArticles() {
+  const lang = language.value || 'en'
+  
+  const { data, error } = await supabase
+    .from('articles_processed')
+    .select(`
+      id,
+      article_id,
+      language_code,
+      title,
+      summary,
+      image_url,
+      created_at,
+      articles!inner (
+        id,
+        indicator,
+        source,
+        sport_id,
+        sports ( id, name )
+      )
+    `)
+    .eq('language_code', lang)
+    .eq('articles.indicator', 1)
+    .order('created_at', { ascending: false })
 
-const mockUserInterests = ['1', '2', '6']
+  if (!error && data) {
+    articles.value = data.map(item => ({
+      id: item.article_id,
+      title: item.title,
+      summary: item.summary,
+      createdAt: item.created_at,
+      source: item.articles?.source,
+      sport: item.articles?.sports || { id: null, name: 'Unknown' },
+      imageUrl: item.image_url || getSportImage(item.articles?.sports?.name)
+    }))
+  }
+  loading.value = false
+}
+
+async function fetchSports() {
+  // Only fetch sports that have at least one article with indicator = 1
+  const { data } = await supabase
+    .from('sports')
+    .select('id, name, articles!inner(id)')
+    .eq('articles.indicator', 1)
+    .order('name')
+  if (data) {
+    // Remove duplicates and extract just id/name
+    const unique = [...new Map(data.map(s => [s.id, { id: s.id, name: s.name }])).values()]
+    sports.value = unique
+  }
+}
+
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80'
+
+function getSportImage(sportName) {
+  const images = {
+    'Soccer': 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
+    'Football': 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
+    'Basketball': 'https://cdn.nba.com/manage/2026/01/brooks-cavs-013026-scaled.jpg',
+    'NBA': 'https://cdn.nba.com/manage/2026/01/brooks-cavs-013026-scaled.jpg',
+    'Antwerp Giants': 'https://dam.beatvenues.be/a0WP500000HyatGMAR_original.jpg',
+    'Tennis': 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80',
+    'Cycling': 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80',
+    'Swimming': 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800&q=80',
+    'Formula 1': 'https://upload.wikimedia.org/wikipedia/commons/1/14/2010_Malaysian_GP_opening_lap.jpg',
+    'IndyCar': 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&q=80',
+    'Indy Car': 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&q=80',
+    'Ice Hockey': 'https://images.unsplash.com/photo-1515703407324-5f753afd8be8?w=800&q=80',
+    'American Football': 'https://shoc.com/cdn/shop/articles/pexels-football-wife-577822-1618200.jpg?v=1759771518',
+    'Motorsport': 'https://images.unsplash.com/photo-1541348263662-e068662d82af?w=800&q=80',
+    'Golf': 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80',
+    'Auto Racing': 'https://images.unsplash.com/photo-1541348263662-e068662d82af?w=800&q=80',
+    'Baseball': 'https://images.unsplash.com/photo-1471295253337-3ceaaedca402?w=800&q=80',
+    'Skeleton': 'https://static01.nyt.com/images/2022/02/10/science/10olympics-skeleton1/10olympics-skeleton1-superJumbo.jpg',
+    'Bobsled': 'https://static01.nyt.com/images/2022/02/10/science/10olympics-skeleton1/10olympics-skeleton1-superJumbo.jpg',
+    'Luge': 'https://static01.nyt.com/images/2022/02/10/science/10olympics-skeleton1/10olympics-skeleton1-superJumbo.jpg',
+    'Winter Sports': 'https://static01.nyt.com/images/2022/02/10/science/10olympics-skeleton1/10olympics-skeleton1-superJumbo.jpg',
+    'Politics': 'https://s.yimg.com/ny/api/res/1.2/EDJoRtM0_spzU.yYaYLMVg--/YXBwaWQ9aGlnaGxhbmRlcjt3PTY0MDtoPTQyNztjZj13ZWJw/https://s.yimg.com/os/creatr-uploaded-images/2025-07/3a4f3d80-68e0-11f0-bfef-851ca0fc17a5',
+    'Skiing': 'https://assets.fis-ski.com/f/252177/1500x1000/e602de04fe/podium-levi.JPG/m/2880x0/smart',
+    'Alpine Skiing': 'https://assets.fis-ski.com/f/252177/1500x1000/e602de04fe/podium-levi.JPG/m/2880x0/smart',
+    'Ski World Cup': 'https://assets.fis-ski.com/f/252177/1500x1000/e602de04fe/podium-levi.JPG/m/2880x0/smart',
+    'Cross-Country Skiing': 'https://assets.fis-ski.com/f/252177/1500x1000/e602de04fe/podium-levi.JPG/m/2880x0/smart',
+    'Freestyle Skiing': 'https://images.unsplash.com/photo-1605540436563-5bca919ae766?w=800&q=80',
+  }
+  return images[sportName] || DEFAULT_IMAGE
+}
 
 const sportOptions = computed(() => [
-  { id: 'all', name: t.value.liveFeed.allSports },
-  { id: 'my-interests', name: t.value.liveFeed.myInterests },
-  { id: '1', name: t.value.sports.football },
-  { id: '2', name: t.value.sports.basketball },
-  { id: '3', name: t.value.sports.tennis },
-  { id: '4', name: t.value.sports.cycling },
-  { id: '5', name: t.value.sports.swimming },
-  { id: '6', name: t.value.sports.formula1 },
+  { id: 'all', name: t.value.liveFeed?.allSports || 'All Sports' },
+  ...sports.value.map(s => ({ id: s.id, name: s.name }))
 ])
 
-const getSportName = (nameKey) => t.value.sports[nameKey] || nameKey
+const getSportName = (sport) => sport?.name || 'Unknown'
 
 const filteredArticles = computed(() => {
-  return mockArticles.filter((article) => {
+  return articles.value.filter((article) => {
     const matchesSearch =
       !searchQuery.value ||
-      article.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      article.summary.toLowerCase().includes(searchQuery.value.toLowerCase())
+      article.title?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      article.summary?.toLowerCase().includes(searchQuery.value.toLowerCase())
 
-    let matchesSport = selectedSport.value === 'all'
-    if (selectedSport.value === 'my-interests') {
-      matchesSport = mockUserInterests.includes(article.sport.id)
-    } else if (selectedSport.value !== 'all') {
-      matchesSport = article.sport.id === selectedSport.value
-    }
+    const matchesSport = selectedSport.value === 'all' || article.sport?.id === selectedSport.value
 
     return matchesSearch && matchesSport
   })
+})
+
+watch(language, () => {
+  fetchArticles()
+})
+
+onMounted(() => {
+  fetchArticles()
+  fetchSports()
+  refreshInterval = setInterval(fetchArticles, 10000)
+})
+
+onUnmounted(() => {
+  clearInterval(refreshInterval)
 })
 
 const formatDate = (dateString) => {
@@ -195,3 +244,13 @@ const clearFilters = () => {
   selectedSport.value = 'all'
 }
 </script>
+
+<style scoped>
+select {
+  color-scheme: dark;
+}
+select option {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+}
+</style>
