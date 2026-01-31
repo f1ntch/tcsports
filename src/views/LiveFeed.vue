@@ -59,6 +59,7 @@ import { supabase } from '@/lib/supabase'
 
 const articles = ref([])
 const loading = ref(true)
+const showMessage = ref(false)
 let interval = null
 
 async function fetchArticles() {

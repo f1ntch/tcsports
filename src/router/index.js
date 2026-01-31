@@ -25,6 +25,11 @@ const routes = [
     component: () => import("@/views/ArticleDetail.vue"),
     meta: { auth: true },
   },
+  {
+    path: "/live",
+    name: "live",
+    component: () => import("@/views/LiveFeed.vue"),
+  },
 ];
 
 const router = createRouter({
