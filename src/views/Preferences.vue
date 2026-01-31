@@ -193,6 +193,37 @@
           </div>
         </div>
 
+        <div class="rounded-xl border border-border bg-card p-6">
+          <div class="mb-1 flex items-center gap-2">
+            <Gift class="h-5 w-5 text-primary" />
+            <h2 class="text-lg font-semibold">{{ t.preferences.merchandise }}</h2>
+          </div>
+          <p class="mb-4 text-sm text-muted-foreground">{{ t.preferences.merchandiseDesc }}</p>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium">{{ t.preferences.lotteryOptIn }}</p>
+                <p class="text-xs text-muted-foreground">{{ t.preferences.lotteryOptInDesc }}</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                class="relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                :class="prefs.lotteryOptIn ? 'bg-primary' : 'bg-input'"
+                @click="prefs.lotteryOptIn = !prefs.lotteryOptIn"
+              >
+                <span
+                  class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform"
+                  :class="prefs.lotteryOptIn ? 'translate-x-5' : 'translate-x-0'"
+                />
+              </button>
+            </div>
+            <div v-if="prefs.lotteryOptIn" class="rounded-lg bg-primary/10 p-3">
+              <p class="text-sm font-medium text-primary">🎉 {{ t.preferences.lotteryNotice }}</p>
+            </div>
+          </div>
+        </div>
+
         <div class="flex justify-end">
           <button
             type="button"
@@ -212,7 +243,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { Bell, Newspaper, Globe, Check, Save } from 'lucide-vue-next'
+import { Bell, Newspaper, Globe, Check, Save, Gift } from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
 import { useLanguage } from '@/composables/useLanguage'
 
@@ -228,6 +259,7 @@ const prefs = reactive({
   showScores: true,
   shareActivity: false,
   personalizedAds: false,
+  lotteryOptIn: true,
 })
 
 const saving = ref(false)
