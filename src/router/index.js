@@ -58,6 +58,21 @@ const routes = [
     name: "dashboard",
     redirect: { name: "live" },
   },
+  {
+    path: "/matches",
+    name: "matches",
+    component: () => import("@/views/Matches.vue"),
+  },
+  {
+    path: "/standings/:leagueId?",
+    name: "standings",
+    component: () => import("@/views/Standings.vue"),
+  },
+  {
+    path: "/team/:teamId",
+    name: "team",
+    component: () => import("@/views/Team.vue"),
+  },
 ];
 
 const router = createRouter({

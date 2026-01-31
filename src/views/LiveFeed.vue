@@ -37,7 +37,7 @@
             class="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:border-primary hover:shadow-lg"
           >
             <div class="relative aspect-video overflow-hidden bg-muted">
-              <img :src="article.imageUrl" :alt="article.title" class="h-full w-full object-cover transition-transform group-hover:scale-105" />
+              <img :src="article.imageUrl" :alt="article.title" class="h-full w-full object-cover transition-transform group-hover:scale-105" @error="(e) => e.target.src = DEFAULT_IMAGE" />
               <span class="absolute left-3 top-3 rounded-md bg-card/90 px-2 py-0.5 text-xs font-medium text-card-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                 {{ getSportName(article.sport) }}
               </span>

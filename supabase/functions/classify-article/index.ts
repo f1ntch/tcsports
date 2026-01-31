@@ -10,7 +10,7 @@ const SPORT_IMAGES: Record<string, string[]> = {
   'Formula 1': ['https://upload.wikimedia.org/wikipedia/commons/1/14/2010_Malaysian_GP_opening_lap.jpg'],
   'Motorsport': ['photo-1541348263662-e068662d82af', 'photo-1503376780353-7e6692767b70'],
   'Auto Racing': ['photo-1541348263662-e068662d82af', 'photo-1503376780353-7e6692767b70'],
-  'IndyCar': ['photo-1568605117036-5fe5e7bab0b7', 'photo-1541348263662-e068662d82af', 'photo-1552845108-5f8e23a2e1c0'],
+  'IndyCar': ['photo-1568605117036-5fe5e7bab0b7', 'photo-1541348263662-e068662d82af'],
   'Indy Car': ['photo-1568605117036-5fe5e7bab0b7', 'photo-1541348263662-e068662d82af'],
   'Ice Hockey': ['photo-1515703407324-5f753afd8be8', 'photo-1580748142556-59ac56a6a5c3'],
   'American Football': ['https://shoc.com/cdn/shop/articles/pexels-football-wife-577822-1618200.jpg?v=1759771518'],

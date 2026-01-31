@@ -16,8 +16,8 @@
       <div class="grid gap-8 lg:grid-cols-8">
         <div class="lg:col-span-5">
           <div class="relative mb-6 aspect-video overflow-hidden rounded-xl bg-muted">
-            <img :src="article.imageUrl" :alt="article.title" class="h-full w-full object-cover" />
-            <span class="absolute left-4 top-4 rounded-md bg-card/90 px-2 py-1 text-sm font-medium">
+            <img :src="article.imageUrl" :alt="article.title" class="h-full w-full object-cover" @error="(e) => e.target.src = 'https://images.unsplash.com/photo-1461896836934-bc06e44c42d8?w=1200&q=80'" />
+            <span class="absolute left-4 top-4 rounded-md bg-primary px-2 py-1 text-sm font-medium text-primary-foreground">
               {{ article.sport.name }}
             </span>
           </div>
@@ -39,7 +39,7 @@
               <Clock class="h-4 w-4" />
               {{ formatTime(article.createdAt) }}
             </span>
-            <span class="rounded-md border border-border px-2 py-0.5 text-xs">
+            <span class="rounded-md bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
               {{ getRelativeTime(article.createdAt) }}
             </span>
           </div>
@@ -106,7 +106,7 @@
           <p class="mb-6 text-lg font-medium">{{ article.summary }}</p>
 
           <div class="article-content space-y-4 text-muted-foreground">
-            <p v-for="(paragraph, idx) in article.content.split('\n\n')" :key="idx">
+            <p v-for="(paragraph, idx) in getContentParagraphs(article.content)" :key="idx">
               {{ paragraph }}
             </p>
           </div>
@@ -135,15 +135,16 @@
                 v-for="related in relatedArticles"
                 :key="related.id"
                 :to="{ name: 'article', params: { id: related.id } }"
-                class="flex gap-3 rounded-md p-1 transition-colors hover:bg-accent"
+                class="group flex gap-3 rounded-md p-1 transition-colors hover:bg-primary/10"
               >
                 <img
                   :src="related.imageUrl"
                   :alt="related.title"
                   class="h-14 w-20 shrink-0 rounded object-cover"
+                  @error="(e) => e.target.src = 'https://images.unsplash.com/photo-1461896836934-bc06e44c42d8?w=800&q=80'"
                 />
                 <div class="min-w-0">
-                  <h4 class="line-clamp-2 text-sm font-medium text-card-foreground">{{ related.title }}</h4>
+                  <h4 class="line-clamp-2 text-sm font-medium text-card-foreground group-hover:text-primary">{{ related.title }}</h4>
                   <span class="text-xs text-muted-foreground">{{ getRelativeTime(related.createdAt) }}</span>
                 </div>
               </router-link>
@@ -157,15 +158,16 @@
                 v-for="similar in similarTagArticles"
                 :key="similar.id"
                 :to="{ name: 'article', params: { id: similar.id } }"
-                class="flex gap-3 rounded-md p-1 transition-colors hover:bg-accent"
+                class="group flex gap-3 rounded-md p-1 transition-colors hover:bg-primary/10"
               >
                 <img
                   :src="similar.imageUrl"
                   :alt="similar.title"
                   class="h-14 w-20 shrink-0 rounded object-cover"
+                  @error="(e) => e.target.src = 'https://images.unsplash.com/photo-1461896836934-bc06e44c42d8?w=800&q=80'"
                 />
                 <div class="min-w-0">
-                  <h4 class="line-clamp-2 text-sm font-medium text-card-foreground">{{ similar.title }}</h4>
+                  <h4 class="line-clamp-2 text-sm font-medium text-card-foreground group-hover:text-primary">{{ similar.title }}</h4>
                   <span class="text-xs text-muted-foreground">{{ getRelativeTime(similar.createdAt) }}</span>
                 </div>
               </router-link>
@@ -357,6 +359,17 @@ async function fetchSimilarByTags(articleId) {
       imageUrl: item.image_url || getSportImage(item.articles?.sports?.name)
     }))
   }
+}
+
+const stripHtml = (html) => {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '').trim()
+}
+
+const getContentParagraphs = (content) => {
+  if (!content) return []
+  const stripped = stripHtml(content)
+  return stripped.split(/\n\n+/).filter(p => p.trim())
 }
 
 const formatDate = (dateString) => {

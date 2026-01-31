@@ -24,7 +24,7 @@
           <button
             v-else
             type="button"
-            class="mx-auto rounded-md p-1.5 hover:bg-sidebar-accent"
+            class="mx-auto rounded-full bg-primary p-2 text-primary-foreground shadow-md hover:bg-primary/90"
             @click="rail = false"
             aria-label="Expand sidebar"
           >
@@ -318,7 +318,7 @@
                 v-for="lang in languages"
                 :key="lang.code"
                 type="button"
-                class="flex w-full items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-accent"
+                class="flex w-full items-center justify-between rounded px-2 py-1.5 text-sm transition-colors hover:bg-primary/10 hover:text-primary"
                 @click="setLanguage(lang.code); topLangOpen = false"
               >
                 {{ lang.name }}
@@ -361,9 +361,9 @@
             <p class="text-sm text-muted-foreground">
               {{ t.common.poweredBy }} DPG Media {{ t.common.and }} Inkubis
             </p>
-            <div class="flex items-center gap-6">
-              <img src="/images/dpg-media-logo.png" alt="DPG Media" class="h-8 rounded bg-white p-1" />
-              <img src="/images/inkubis-logo.svg" alt="Inkubis" class="h-8 rounded p-1 dark:bg-[#1a1035]" />
+            <div class="flex items-center gap-8">
+              <img src="/images/dpg-media-logo.png" alt="DPG Media" class="h-24 rounded bg-white p-2" />
+              <img src="/images/inkubis-logo.svg" alt="Inkubis" class="h-24 rounded p-2 dark:bg-[#1a1035]" />
             </div>
           </div>
         </div>
@@ -394,6 +394,7 @@ import {
   LogIn,
   PanelLeft,
   X,
+  Trophy,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useLanguage } from '@/composables/useLanguage'
@@ -435,6 +436,7 @@ const navItems = computed(() => {
   const items = [
     { to: '/', icon: Home, title: t.value.nav.home },
     { to: '/live', icon: Rss, title: t.value.nav.liveFeed },
+    { to: '/matches', icon: Trophy, title: t.value.nav.matches },
   ]
   if (!auth.user) {
     items.push({ to: '/register', icon: UserPlus, title: t.value.nav.register })
