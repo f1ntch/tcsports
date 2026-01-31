@@ -99,5 +99,4 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION process_article_classification IS 'Processes AI classification results for an article, updating sport and creating tags';
 

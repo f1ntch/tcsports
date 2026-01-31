@@ -1,278 +1,371 @@
 <template>
   <AppLayout>
-    <v-container class="py-8" v-if="article">
-      <v-btn variant="text" :to="{ name: 'live' }" class="mb-6 text-medium-emphasis">
-        <v-icon start>mdi-arrow-left</v-icon>
+    <div v-if="loading" class="container mx-auto flex items-center justify-center px-4 py-16">
+      <Loader2 class="h-12 w-12 animate-spin text-primary" />
+    </div>
+
+    <div v-else-if="article" class="container mx-auto px-4 py-8">
+      <router-link
+        :to="{ name: 'live' }"
+        class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft class="h-4 w-4" />
         {{ t.article.backToFeed }}
-      </v-btn>
+      </router-link>
 
-      <v-row>
-        <v-col cols="12" lg="8">
-          <v-img :src="article.imageUrl" height="400" cover class="rounded-xl mb-6 position-relative">
-            <v-chip class="position-absolute" style="top: 16px; left: 16px;" color="surface" variant="flat">
+      <div class="grid gap-8 lg:grid-cols-8">
+        <div class="lg:col-span-5">
+          <div class="relative mb-6 aspect-video overflow-hidden rounded-xl bg-muted">
+            <img :src="article.imageUrl" :alt="article.title" class="h-full w-full object-cover" />
+            <span class="absolute left-4 top-4 rounded-md bg-card/90 px-2 py-1 text-sm font-medium">
               {{ article.sport.name }}
-            </v-chip>
-          </v-img>
+            </span>
+          </div>
 
-          <h1 class="text-h4 text-md-h3 font-weight-bold mb-4">{{ article.title }}</h1>
+          <h1 class="mb-4 text-2xl font-bold md:text-3xl">{{ article.title }}</h1>
 
-          <div class="d-flex flex-wrap align-center ga-4 text-body-2 text-medium-emphasis mb-4">
-            <div class="d-flex align-center ga-2">
-              <v-avatar color="primary" size="32">
-                <v-icon size="18">mdi-account</v-icon>
-              </v-avatar>
-              <span class="font-weight-medium text-high-emphasis">{{ article.author }}</span>
+          <div class="mb-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div class="flex items-center gap-2">
+              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <User class="h-4 w-4" />
+              </div>
+              <span class="font-medium text-foreground">{{ article.author }}</span>
             </div>
-            <span class="d-flex align-center ga-1">
-              <v-icon size="16">mdi-calendar</v-icon>
+            <span class="flex items-center gap-1">
+              <Calendar class="h-4 w-4" />
               {{ formatDate(article.createdAt) }}
             </span>
-            <span class="d-flex align-center ga-1">
-              <v-icon size="16">mdi-clock-outline</v-icon>
+            <span class="flex items-center gap-1">
+              <Clock class="h-4 w-4" />
               {{ formatTime(article.createdAt) }}
             </span>
-            <v-chip size="small" variant="outlined">{{ getRelativeTime(article.createdAt) }}</v-chip>
+            <span class="rounded-md border border-border px-2 py-0.5 text-xs">
+              {{ getRelativeTime(article.createdAt) }}
+            </span>
           </div>
 
-          <div class="d-flex ga-2 mb-6">
-            <v-menu>
-              <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" variant="outlined" size="small">
-                  <v-icon start>mdi-share-variant</v-icon>
-                  {{ t.article.share }}
-                </v-btn>
-              </template>
-              <v-list density="compact">
-                <v-list-item @click="copyLink">
-                  <template v-slot:prepend>
-                    <v-icon :color="linkCopied ? 'success' : undefined">
-                      {{ linkCopied ? 'mdi-check' : 'mdi-link' }}
-                    </v-icon>
-                  </template>
-                  <v-list-item-title>{{ linkCopied ? t.article.linkCopied : t.article.copyLink }}</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="shareToFacebook">
-                  <template v-slot:prepend><v-icon>mdi-facebook</v-icon></template>
-                  <v-list-item-title>{{ t.article.shareOnFacebook }}</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="shareToWhatsApp">
-                  <template v-slot:prepend><v-icon>mdi-whatsapp</v-icon></template>
-                  <v-list-item-title>{{ t.article.shareOnWhatsApp }}</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-
-            <v-btn
-              :variant="isArchived ? 'flat' : 'outlined'"
-              :color="isArchived ? 'primary' : undefined"
-              size="small"
+          <div class="mb-6 flex flex-wrap gap-2">
+            <div class="relative" ref="shareMenuRef">
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-xs hover:bg-accent hover:text-accent-foreground"
+                @click="shareOpen = !shareOpen"
+              >
+                <Share2 class="h-4 w-4" />
+                {{ t.article.share }}
+              </button>
+              <div
+                v-if="shareOpen"
+                class="absolute left-0 top-full z-10 mt-1 min-w-[180px] rounded-md border border-border bg-popover py-1 shadow-lg"
+              >
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
+                  @click="copyLink(); shareOpen = false"
+                >
+                  <Link v-if="!linkCopied" class="h-4 w-4" />
+                  <Check v-else class="h-4 w-4 text-primary" />
+                  {{ linkCopied ? t.article.linkCopied : t.article.copyLink }}
+                </button>
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
+                  @click="shareToFacebook"
+                >
+                  <Share2 class="h-4 w-4" />
+                  {{ t.article.shareOnFacebook }}
+                </button>
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
+                  @click="shareToWhatsApp"
+                >
+                  <Share2 class="h-4 w-4" />
+                  {{ t.article.shareOnWhatsApp }}
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
+              :class="
+                isArchived
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground'
+              "
               @click="toggleArchive"
             >
-              <v-icon start>{{ isArchived ? 'mdi-bookmark-check' : 'mdi-bookmark-outline' }}</v-icon>
+              <BookmarkCheck v-if="isArchived" class="h-4 w-4" />
+              <Bookmark v-else class="h-4 w-4" />
               {{ isArchived ? t.article.removeFromArchive : t.article.saveToArchive }}
-            </v-btn>
+            </button>
           </div>
 
-          <v-divider class="mb-6" />
+          <div class="mb-6 h-px bg-border" />
 
-          <p class="text-h6 font-weight-medium mb-6">{{ article.summary }}</p>
+          <p class="mb-6 text-lg font-medium">{{ article.summary }}</p>
 
-          <div class="article-content text-body-1 text-medium-emphasis">
-            <p v-for="(paragraph, idx) in article.content.split('\n\n')" :key="idx" class="mb-4">
+          <div class="article-content space-y-4 text-muted-foreground">
+            <p v-for="(paragraph, idx) in article.content.split('\n\n')" :key="idx">
               {{ paragraph }}
             </p>
           </div>
 
-          <v-divider class="my-8" />
+          <div class="my-8 h-px bg-border" />
 
           <div>
-            <h2 class="text-h6 font-weight-bold mb-4">{{ t.article.tags }}</h2>
-            <div class="d-flex flex-wrap ga-2">
-              <v-chip
+            <h2 class="mb-4 text-lg font-semibold">{{ t.article.tags }}</h2>
+            <div class="flex flex-wrap gap-2">
+              <span
                 v-for="tag in article.tags"
                 :key="tag"
-                variant="tonal"
-                color="primary"
+                class="rounded-md bg-primary/10 px-2.5 py-0.5 text-sm font-medium text-primary"
               >
                 {{ tag }}
-              </v-chip>
+              </span>
             </div>
           </div>
-        </v-col>
+        </div>
 
-        <v-col cols="12" lg="4">
-          <v-card v-if="relatedArticles.length" class="mb-6">
-            <v-card-title class="text-h6">{{ t.article.relatedArticles }}</v-card-title>
-            <v-card-text>
-              <div class="d-flex flex-column ga-4">
-                <router-link
-                  v-for="related in relatedArticles"
-                  :key="related.id"
-                  :to="{ name: 'article', params: { id: related.id } }"
-                  class="text-decoration-none d-flex ga-3"
-                >
-                  <v-img :src="related.imageUrl" width="80" height="60" cover class="rounded flex-shrink-0" />
-                  <div>
-                    <h4 class="text-body-2 font-weight-medium text-high-emphasis related-title">{{ related.title }}</h4>
-                    <span class="text-caption text-medium-emphasis">{{ getRelativeTime(related.createdAt) }}</span>
-                  </div>
-                </router-link>
-              </div>
-            </v-card-text>
-          </v-card>
+        <aside class="lg:col-span-3">
+          <div v-if="relatedArticles.length" class="mb-6 rounded-xl border border-border bg-card p-4">
+            <h3 class="mb-4 text-lg font-semibold">{{ t.article.relatedArticles }}</h3>
+            <div class="flex flex-col gap-4">
+              <router-link
+                v-for="related in relatedArticles"
+                :key="related.id"
+                :to="{ name: 'article', params: { id: related.id } }"
+                class="flex gap-3 rounded-md p-1 transition-colors hover:bg-accent"
+              >
+                <img
+                  :src="related.imageUrl"
+                  :alt="related.title"
+                  class="h-14 w-20 shrink-0 rounded object-cover"
+                />
+                <div class="min-w-0">
+                  <h4 class="line-clamp-2 text-sm font-medium text-card-foreground">{{ related.title }}</h4>
+                  <span class="text-xs text-muted-foreground">{{ getRelativeTime(related.createdAt) }}</span>
+                </div>
+              </router-link>
+            </div>
+          </div>
 
-          <v-card>
-            <v-card-title class="text-h6">{{ t.article.popularTags }}</v-card-title>
-            <v-card-text>
-              <div class="d-flex flex-wrap ga-2">
-                <v-chip
-                  v-for="tag in allTags.slice(0, 12)"
-                  :key="tag"
-                  variant="outlined"
-                  size="small"
-                >
-                  {{ tag }}
-                </v-chip>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
+          <div v-if="similarTagArticles.length" class="rounded-xl border border-border bg-card p-4">
+            <h3 class="mb-4 text-lg font-semibold">{{ t.article.similarArticles || 'Similar Articles' }}</h3>
+            <div class="flex flex-col gap-4">
+              <router-link
+                v-for="similar in similarTagArticles"
+                :key="similar.id"
+                :to="{ name: 'article', params: { id: similar.id } }"
+                class="flex gap-3 rounded-md p-1 transition-colors hover:bg-accent"
+              >
+                <img
+                  :src="similar.imageUrl"
+                  :alt="similar.title"
+                  class="h-14 w-20 shrink-0 rounded object-cover"
+                />
+                <div class="min-w-0">
+                  <h4 class="line-clamp-2 text-sm font-medium text-card-foreground">{{ similar.title }}</h4>
+                  <span class="text-xs text-muted-foreground">{{ getRelativeTime(similar.createdAt) }}</span>
+                </div>
+              </router-link>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
 
-    <v-container v-else class="d-flex flex-column align-center justify-center py-16 text-center">
-      <h1 class="text-h5 font-weight-bold mb-2">{{ t.article.articleNotFound }}</h1>
-      <p class="text-body-1 text-medium-emphasis mb-6">{{ t.article.articleNotFoundDesc }}</p>
-      <v-btn :to="{ name: 'live' }" color="primary">{{ t.article.backToFeed }}</v-btn>
-    </v-container>
+    <div v-else class="container mx-auto flex flex-col items-center justify-center px-4 py-16 text-center">
+      <h1 class="mb-2 text-xl font-semibold">{{ t.article.articleNotFound }}</h1>
+      <p class="mb-6 text-muted-foreground">{{ t.article.articleNotFoundDesc }}</p>
+      <router-link
+        :to="{ name: 'live' }"
+        class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+      >
+        {{ t.article.backToFeed }}
+      </router-link>
+    </div>
   </AppLayout>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import {
+  ArrowLeft,
+  User,
+  Calendar,
+  Clock,
+  Share2,
+  Link,
+  Check,
+  Bookmark,
+  BookmarkCheck,
+  Loader2,
+} from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
 import { useLanguage } from '@/composables/useLanguage'
+import { useAuthStore } from '@/stores/auth'
+import { supabase } from '@/lib/supabase'
 
 const route = useRoute()
-const { t } = useLanguage()
+const auth = useAuthStore()
+const { t, language } = useLanguage()
 
-const mockArchivedIds = ['2', '5']
-const isArchived = ref(mockArchivedIds.includes(route.params.id))
+const article = ref(null)
+const relatedArticles = ref([])
+const similarTagArticles = ref([])
+const isArchived = ref(false)
+const loading = ref(true)
 const linkCopied = ref(false)
+const shareOpen = ref(false)
+const shareMenuRef = ref(null)
 
-const mockArticles = [
-  {
-    id: '1',
-    title: 'Champions League Final: Epic Showdown in Istanbul',
-    summary: 'Two European giants clash in what promises to be one of the most exciting finals in recent memory.',
-    content: `The stage is set for what many are calling the match of the decade. Two of Europe's most prestigious clubs will face off in Istanbul's Ataturk Olympic Stadium.
+function getSportImage(sportName) {
+  const images = {
+    'Soccer': 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80',
+    'Football': 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80',
+    'Basketball': 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1200&q=80',
+    'Tennis': 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1200&q=80',
+    'Cycling': 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1200&q=80',
+    'Swimming': 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=1200&q=80',
+    'Formula 1': 'https://images.unsplash.com/photo-1541348263662-e068662d82af?w=1200&q=80',
+    'Ice Hockey': 'https://images.unsplash.com/photo-1515703407324-5f753afd8be8?w=1200&q=80',
+    'American Football': 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=1200&q=80',
+  }
+  return images[sportName] || 'https://images.unsplash.com/photo-1461896836934-bc06e44c42d8?w=1200&q=80'
+}
 
-Both teams have navigated a treacherous path to reach this final. The defending champions overcame a dramatic semi-final, while their opponents dispatched the tournament favorites with stunning tactical brilliance.
+async function fetchArticle() {
+  loading.value = true
+  const lang = language.value || 'en'
+  const articleId = parseInt(route.params.id)
 
-The tactical battle between the two managers promises to be fascinating. One favors a high-pressing, possession-based approach, while the other has mastered the art of the counter-attack.
+  const { data, error } = await supabase
+    .from('articles_processed')
+    .select(`
+      id, article_id, title, summary, created_at,
+      articles!inner (
+        id, body, source, sport_id,
+        sports ( id, name )
+      )
+    `)
+    .eq('article_id', articleId)
+    .eq('language_code', lang)
+    .single()
 
-Key players on both sides have been in scintillating form. The tournament's top scorer will be looking to add to his tally, while the opposing goalkeeper has kept the most clean sheets.
+  if (!error && data) {
+    article.value = {
+      id: data.article_id,
+      title: data.title,
+      summary: data.summary,
+      content: data.articles?.body || '',
+      createdAt: data.created_at,
+      sport: data.articles?.sports || { id: null, name: 'Unknown' },
+      imageUrl: getSportImage(data.articles?.sports?.name),
+      author: data.articles?.source || 'TC Sports',
+      tags: []
+    }
+    await fetchTags(articleId)
+    await fetchRelated(data.articles?.sport_id, articleId)
+    await fetchSimilarByTags(articleId)
+    await checkArchived(articleId)
+  }
+  loading.value = false
+}
 
-With millions of fans watching worldwide, the pressure will be immense. But these players thrive on the biggest stages.`,
-    createdAt: '2026-01-30T20:30:00Z',
-    sport: { id: '1', name: 'Football' },
-    imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80',
-    author: 'James Wilson',
-    tags: ['Champions League', 'Final', 'Istanbul', 'European Football', 'UEFA'],
-  },
-  {
-    id: '2',
-    title: 'NBA All-Star Weekend: Records Shattered',
-    summary: 'The annual showcase of basketball\'s finest talents delivered unforgettable moments.',
-    content: `The NBA All-Star Weekend delivered on its promise of entertainment, with several records falling across the various competitions.
+async function fetchTags(articleId) {
+  const { data } = await supabase
+    .from('article_tags')
+    .select('tagname')
+    .eq('article_id', articleId)
+  if (data) {
+    article.value.tags = data.map(t => t.tagname)
+  }
+}
 
-The Three-Point Contest saw a new benchmark set, with the winner draining an incredible 31 out of 34 attempts in the final round.
+async function fetchRelated(sportId, excludeId) {
+  if (!sportId) return
+  const lang = language.value || 'en'
+  const { data } = await supabase
+    .from('articles_processed')
+    .select(`
+      article_id, title, created_at,
+      articles!inner ( sport_id, sports ( name ) )
+    `)
+    .eq('language_code', lang)
+    .eq('articles.sport_id', sportId)
+    .neq('article_id', excludeId)
+    .limit(3)
+  
+  if (data) {
+    relatedArticles.value = data.map(item => ({
+      id: item.article_id,
+      title: item.title,
+      createdAt: item.created_at,
+      imageUrl: getSportImage(item.articles?.sports?.name)
+    }))
+  }
+}
 
-The Slam Dunk Competition returned to its glory days with four competitors pushing the boundaries of what's physically possible.
+async function checkArchived(articleId) {
+  if (!auth.user) return
+  const { data } = await supabase
+    .from('user_articles')
+    .select('id')
+    .eq('user_id', auth.user.id)
+    .eq('article_id', articleId)
+    .single()
+  isArchived.value = !!data
+}
 
-The All-Star Game itself showcased the league's brightest stars in a surprisingly competitive affair. Unlike recent years, both teams played with intensity throughout.`,
-    createdAt: '2026-01-30T18:15:00Z',
-    sport: { id: '2', name: 'Basketball' },
-    imageUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1200&q=80',
-    author: 'Marcus Thompson',
-    tags: ['NBA', 'All-Star', 'Three-Point Contest', 'Slam Dunk', 'Records'],
-  },
-  {
-    id: '3',
-    title: 'Australian Open: Underdog Reaches Semi-Finals',
-    summary: 'In a stunning upset, the unseeded player defeats the world number two in straight sets.',
-    content: `In one of the most remarkable stories of this year's Australian Open, an unseeded Argentine player has reached the semi-finals.
-
-The 22-year-old, ranked 87th in the world, produced the performance of his career on Rod Laver Arena. His powerful baseline game proved too much for his highly-favored opponent.
-
-Coming into the tournament, few had heard of this rising star outside of South American tennis circles. But his journey has captured hearts worldwide.`,
-    createdAt: '2026-01-30T14:45:00Z',
-    sport: { id: '3', name: 'Tennis' },
-    imageUrl: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1200&q=80',
-    author: 'Sofia Martinez',
-    tags: ['Australian Open', 'Grand Slam', 'Tennis', 'Upset', 'Argentina'],
-  },
-  {
-    id: '4',
-    title: 'Tour de France Route Announced for 2026',
-    summary: 'The legendary race will feature more mountain stages than ever before.',
-    content: `Tour de France organizers have unveiled what they're calling the most demanding route in the race's 123-year history.
-
-The 2026 edition will feature six mountain-top finishes, including back-to-back summit finishes in the Alps during the final week.
-
-The infamous Mont Ventoux returns after a two-year absence, scheduled for a crucial stage that could define the entire race.`,
-    createdAt: '2026-01-30T12:00:00Z',
-    sport: { id: '4', name: 'Cycling' },
-    imageUrl: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1200&q=80',
-    author: 'Pierre Dubois',
-    tags: ['Tour de France', 'Cycling', 'Mountain Stage', 'Alps', 'Pyrenees'],
-  },
-  {
-    id: '5',
-    title: 'Swimming World Championships: New World Record Set',
-    summary: 'The 100m freestyle record that stood for over a decade has finally been broken.',
-    content: `The swimming world witnessed history as a 23-year-old from the Netherlands broke the seemingly unbreakable 100m freestyle world record.
-
-The previous record, set over a decade ago during the controversial super-suit era, had long been considered out of reach.
-
-But the young Dutch swimmer had other ideas. From the moment he dove into the pool, it was clear something special was unfolding.`,
-    createdAt: '2026-01-29T22:30:00Z',
-    sport: { id: '5', name: 'Swimming' },
-    imageUrl: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=1200&q=80',
-    author: 'Emma van Berg',
-    tags: ['Swimming', 'World Record', 'World Championships', 'Netherlands', 'Freestyle'],
-  },
-  {
-    id: '6',
-    title: 'F1 Pre-Season Testing: Surprising Early Pace',
-    summary: 'The newly restructured team shows unexpected speed during testing in Bahrain.',
-    content: `The first week of Formula 1 pre-season testing in Bahrain has thrown up a major surprise.
-
-After a significant restructuring during the off-season, the improved pace was perhaps not entirely unexpected. But the margins they're showing have exceeded even the most optimistic predictions.
-
-Lap time analysis reveals their car is particularly strong in the high-speed corners, suggesting their new aerodynamic philosophy is working as intended.`,
-    createdAt: '2026-01-29T19:00:00Z',
-    sport: { id: '6', name: 'Formula 1' },
-    imageUrl: 'https://images.unsplash.com/photo-1541348263662-e068662d82af?w=1200&q=80',
-    author: 'Sebastian Kraft',
-    tags: ['Formula 1', 'Pre-Season', 'Testing', 'Bahrain', 'F1 2026'],
-  },
-]
-
-const article = computed(() => mockArticles.find(a => a.id === route.params.id))
-
-const relatedArticles = computed(() => {
-  if (!article.value) return []
-  return mockArticles
-    .filter(a => a.sport.id === article.value.sport.id && a.id !== article.value.id)
-    .slice(0, 3)
-})
-
-const allTags = computed(() => [...new Set(mockArticles.flatMap(a => a.tags))])
+async function fetchSimilarByTags(articleId) {
+  if (!article.value?.tags?.length) return
+  const lang = language.value || 'en'
+  const relatedIds = relatedArticles.value.map(a => a.id)
+  
+  // Get articles that share the same tags
+  const { data: tagMatches } = await supabase
+    .from('article_tags')
+    .select('article_id')
+    .in('tagname', article.value.tags)
+    .neq('article_id', articleId)
+  
+  if (!tagMatches?.length) return
+  
+  const matchedIds = [...new Set(tagMatches.map(t => t.article_id))]
+    .filter(id => !relatedIds.includes(id))
+    .slice(0, 5)
+  
+  if (!matchedIds.length) return
+  
+  const { data } = await supabase
+    .from('articles_processed')
+    .select(`
+      article_id, title, created_at, image_url,
+      articles!inner ( sports ( name ) )
+    `)
+    .eq('language_code', lang)
+    .in('article_id', matchedIds)
+    .limit(4)
+  
+  if (data) {
+    similarTagArticles.value = data.map(item => ({
+      id: item.article_id,
+      title: item.title,
+      createdAt: item.created_at,
+      imageUrl: item.image_url || getSportImage(item.articles?.sports?.name)
+    }))
+  }
+}
 
 const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+  return new Date(dateString).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
 }
 
 const formatTime = (dateString) => {
@@ -287,31 +380,60 @@ const getRelativeTime = (dateString) => {
   return diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`
 }
 
-const toggleArchive = () => isArchived.value = !isArchived.value
+const toggleArchive = async () => {
+  if (!auth.user || !article.value) return
+  const articleId = article.value.id
+
+  if (isArchived.value) {
+    await supabase.from('user_articles').delete()
+      .eq('user_id', auth.user.id)
+      .eq('article_id', articleId)
+    isArchived.value = false
+  } else {
+    await supabase.from('user_articles').insert({
+      user_id: auth.user.id,
+      article_id: articleId
+    })
+    isArchived.value = true
+  }
+}
 
 const copyLink = async () => {
   await navigator.clipboard.writeText(window.location.href)
   linkCopied.value = true
-  setTimeout(() => linkCopied.value = false, 2000)
+  setTimeout(() => (linkCopied.value = false), 2000)
 }
 
 const shareToFacebook = () => {
-  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank', 'width=600,height=400')
+  window.open(
+    `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`,
+    '_blank',
+    'width=600,height=400'
+  )
 }
 
 const shareToWhatsApp = () => {
   const text = encodeURIComponent(article.value?.title || 'Check out this article')
   window.open(`https://wa.me/?text=${text}%20${encodeURIComponent(window.location.href)}`, '_blank')
 }
+
+const closeShare = (e) => {
+  if (shareMenuRef.value && !shareMenuRef.value.contains(e.target)) {
+    shareOpen.value = false
+  }
+}
+
+watch(language, () => fetchArticle())
+watch(() => route.params.id, () => fetchArticle())
+
+onMounted(() => {
+  document.addEventListener('click', closeShare)
+  fetchArticle()
+})
+onUnmounted(() => document.removeEventListener('click', closeShare))
 </script>
 
 <style scoped>
-.related-title {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
 .article-content {
   line-height: 1.8;
 }

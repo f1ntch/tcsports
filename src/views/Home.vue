@@ -1,44 +1,51 @@
 <template>
   <AppLayout>
-    <v-container class="py-12">
-      <div class="d-flex flex-column align-center text-center">
-        <v-img
-          src="/images/tres-comas.png"
-          alt="Tres Comas - Three bulls with sombreros"
-          width="100%"
-          max-width="700"
-          aspect-ratio="16/9"
-          class="rounded-xl mb-8"
-          cover
-        />
-
-        <h1 class="text-h3 text-md-h2 font-weight-bold mb-4">
-          {{ t.home.welcome }} <span class="text-primary">TC Sports</span>
-        </h1>
-        
-        <p class="text-body-1 text-medium-emphasis mb-8" style="max-width: 600px;">
-          {{ t.home.description }}
-        </p>
-
-        <div class="d-flex flex-column flex-sm-row ga-4 mb-12">
-          <v-btn :to="{ name: 'register' }" color="primary" size="large" min-width="180" rounded="pill" class="px-8">
-            {{ t.home.getStarted }}
-          </v-btn>
-          <v-btn :to="{ name: 'live' }" variant="outlined" color="primary" size="large" min-width="180" rounded="pill" class="px-8">
-            {{ t.home.browseArticles }}
-          </v-btn>
+    <div class="container mx-auto px-4 py-12">
+      <div class="flex flex-col items-center gap-8 text-center">
+        <div class="relative h-64 w-full max-w-2xl overflow-hidden rounded-2xl">
+          <img
+            src="/images/tres-comas.png"
+            alt="Tres Comas - Three bulls with sombreros"
+            class="h-full w-full object-cover"
+          />
         </div>
 
-        <v-row class="w-100" style="max-width: 1000px;">
-          <v-col cols="12" md="4" v-for="feature in features" :key="feature.title">
-            <v-card variant="outlined" class="h-100 pa-6 text-left feature-card">
-              <h3 class="text-h6 font-weight-bold mb-2">{{ feature.title }}</h3>
-              <p class="text-body-2 text-medium-emphasis">{{ feature.description }}</p>
-            </v-card>
-          </v-col>
-        </v-row>
+        <div class="flex flex-col items-center gap-4">
+          <h1 class="text-balance text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
+            {{ t.home.welcome }} <span class="text-primary">TC Sports</span>
+          </h1>
+          <p class="max-w-xl text-pretty text-lg text-muted-foreground">
+            {{ t.home.description }}
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-4 sm:flex-row">
+          <router-link
+            :to="{ name: 'register' }"
+            class="inline-flex min-w-[160px] items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            {{ t.home.getStarted }}
+          </router-link>
+          <router-link
+            :to="{ name: 'live' }"
+            class="inline-flex min-w-[160px] items-center justify-center rounded-md border border-input bg-background px-6 py-2.5 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            {{ t.home.browseArticles }}
+          </router-link>
+        </div>
+
+        <div class="mt-12 grid w-full max-w-4xl gap-6 md:grid-cols-3">
+          <div
+            v-for="feature in features"
+            :key="feature.title"
+            class="rounded-xl border border-border bg-card p-6 text-left transition-colors hover:border-primary/50"
+          >
+            <h3 class="mb-2 text-lg font-semibold text-card-foreground">{{ feature.title }}</h3>
+            <p class="text-sm text-muted-foreground">{{ feature.description }}</p>
+          </div>
+        </div>
       </div>
-    </v-container>
+    </div>
   </AppLayout>
 </template>
 
@@ -64,13 +71,3 @@ const features = computed(() => [
   },
 ])
 </script>
-
-<style scoped>
-.feature-card {
-  transition: all 0.2s ease;
-  border-color: rgba(160, 160, 184, 0.2) !important;
-}
-.feature-card:hover {
-  border-color: rgba(168, 85, 247, 0.5) !important;
-}
-</style>
