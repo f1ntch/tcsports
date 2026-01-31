@@ -38,7 +38,7 @@
           >
             <div class="relative aspect-video overflow-hidden bg-muted">
               <img :src="article.imageUrl" :alt="article.title" class="h-full w-full object-cover transition-transform group-hover:scale-105" @error="(e) => e.target.src = DEFAULT_IMAGE" />
-              <span class="absolute left-3 top-3 rounded-md bg-card/90 px-2 py-0.5 text-xs font-medium text-card-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+              <span class="absolute left-3 top-3 rounded-md bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
                 {{ getSportName(article.sport) }}
               </span>
             </div>
@@ -90,14 +90,17 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Search, Calendar, Clock, Loader2 } from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
 import { useLanguage } from '@/composables/useLanguage'
+import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 
 const { t, language } = useLanguage()
+const auth = useAuthStore()
 
 const searchQuery = ref('')
 const selectedSport = ref('all')
 const articles = ref([])
 const sports = ref([])
+const userInterests = ref([])
 const loading = ref(true)
 let refreshInterval = null
 
@@ -141,16 +144,25 @@ async function fetchArticles() {
 }
 
 async function fetchSports() {
-  // Only fetch sports that have at least one article with indicator = 1
   const { data } = await supabase
     .from('sports')
     .select('id, name, articles!inner(id)')
     .eq('articles.indicator', 1)
     .order('name')
   if (data) {
-    // Remove duplicates and extract just id/name
     const unique = [...new Map(data.map(s => [s.id, { id: s.id, name: s.name }])).values()]
     sports.value = unique
+  }
+}
+
+async function fetchUserInterests() {
+  if (!auth.user) return
+  const { data } = await supabase
+    .from('user_interests')
+    .select('sport_id')
+    .eq('user_id', auth.user.id)
+  if (data) {
+    userInterests.value = data.map(d => d.sport_id)
   }
 }
 
@@ -189,10 +201,16 @@ function getSportImage(sportName) {
   return images[sportName] || DEFAULT_IMAGE
 }
 
-const sportOptions = computed(() => [
-  { id: 'all', name: t.value.liveFeed?.allSports || 'All Sports' },
-  ...sports.value.map(s => ({ id: s.id, name: s.name }))
-])
+const sportOptions = computed(() => {
+  const options = [
+    { id: 'all', name: t.value.liveFeed?.allSports || 'All Sports' }
+  ]
+  if (auth.user && userInterests.value.length) {
+    options.push({ id: 'interests', name: t.value.liveFeed?.myInterests || 'My Interests' })
+  }
+  options.push(...sports.value.map(s => ({ id: s.id, name: s.name })))
+  return options
+})
 
 const getSportName = (sport) => sport?.name || 'Unknown'
 
@@ -203,7 +221,12 @@ const filteredArticles = computed(() => {
       article.title?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       article.summary?.toLowerCase().includes(searchQuery.value.toLowerCase())
 
-    const matchesSport = selectedSport.value === 'all' || article.sport?.id === selectedSport.value
+    let matchesSport = true
+    if (selectedSport.value === 'interests') {
+      matchesSport = userInterests.value.includes(article.sport?.id)
+    } else if (selectedSport.value !== 'all') {
+      matchesSport = article.sport?.id === selectedSport.value
+    }
 
     return matchesSearch && matchesSport
   })
@@ -216,6 +239,7 @@ watch(language, () => {
 onMounted(() => {
   fetchArticles()
   fetchSports()
+  fetchUserInterests()
   refreshInterval = setInterval(fetchArticles, 10000)
 })
 

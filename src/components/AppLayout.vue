@@ -148,6 +148,14 @@
       </button>
       <span class="text-lg font-bold text-primary">,,,</span>
       <span class="font-semibold text-foreground">TC Sports</span>
+      <router-link
+        v-if="!auth.user"
+        :to="{ name: 'login' }"
+        class="ml-auto inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+      >
+        <LogIn class="h-4 w-4" />
+        {{ t.user.signIn }}
+      </router-link>
     </header>
 
     <!-- Mobile drawer backdrop -->
@@ -348,6 +356,25 @@
               <Moon class="h-4 w-4" />
             </button>
           </div>
+
+          <!-- Sign In button -->
+          <router-link
+            v-if="!auth.user"
+            :to="{ name: 'login' }"
+            class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <LogIn class="h-4 w-4" />
+            {{ t.user.signIn }}
+          </router-link>
+          <button
+            v-else
+            type="button"
+            class="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-xs hover:bg-accent"
+            @click="handleSignOut"
+          >
+            <LogOut class="h-4 w-4" />
+            {{ t.user.signOut }}
+          </button>
         </div>
       </header>
 
@@ -391,6 +418,7 @@ import {
   Globe,
   Check,
   LogOut,
+  ShoppingBag,
   LogIn,
   PanelLeft,
   X,
@@ -437,6 +465,7 @@ const navItems = computed(() => {
     { to: '/', icon: Home, title: t.value.nav.home },
     { to: '/live', icon: Rss, title: t.value.nav.liveFeed },
     { to: '/matches', icon: Trophy, title: t.value.nav.matches },
+    { to: '/shop', icon: ShoppingBag, title: t.value.nav.shop },
   ]
   if (!auth.user) {
     items.push({ to: '/register', icon: UserPlus, title: t.value.nav.register })

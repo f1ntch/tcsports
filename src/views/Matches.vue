@@ -17,14 +17,14 @@
           @click="showFollowedOnly = !showFollowedOnly"
         >
           <Star class="mr-1 inline h-3 w-3" :class="showFollowedOnly ? 'fill-current' : ''" />
-          My Teams
+          {{ t.matches.myTeams }}
         </button>
         <div class="ml-auto flex items-center gap-2">
           <select
             v-model="selectedLeague"
             class="rounded-md border border-border bg-card px-3 py-1.5 text-sm"
           >
-            <option value="all">All Leagues</option>
+            <option value="all">{{ t.matches.allLeagues }}</option>
             <option v-for="league in allLeagues" :key="league.id" :value="league.id">
               {{ league.country }}: {{ league.name }}
             </option>
@@ -34,7 +34,7 @@
           </button>
           <button class="flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm">
             <CalendarIcon class="h-4 w-4" />
-            Today
+            {{ t.matches.today }}
           </button>
           <button class="rounded-md p-2 hover:bg-primary/10" @click="nextDay">
             <ChevronRight class="h-4 w-4" />
@@ -47,7 +47,7 @@
           <img :src="league.flag" :alt="league.country" class="h-5 w-5 rounded-sm object-cover" />
           <span class="font-semibold">{{ league.country }}: {{ league.name }}</span>
           <router-link :to="{ name: 'standings', params: { leagueId: league.id } }" class="ml-auto text-sm text-primary hover:underline">
-            Standings
+            {{ t.matches.standings }}
           </router-link>
         </div>
 
@@ -103,7 +103,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-              <span v-if="match.status === 'live'" class="animate-pulse rounded bg-red-500 px-2 py-1 text-xs font-bold text-white">LIVE</span>
+              <span v-if="match.status === 'live'" class="animate-pulse rounded bg-red-500 px-2 py-1 text-xs font-bold text-white">{{ t.matches.live.toUpperCase() }}</span>
               <span v-else-if="match.status === 'ft'" class="rounded bg-muted px-2 py-1 text-xs">FT</span>
             </div>
 
@@ -124,7 +124,7 @@
       </div>
 
       <div v-if="filteredLeagues.length === 0" class="rounded-lg border border-border bg-card p-8 text-center">
-        <p class="text-muted-foreground">No matches found for selected filters</p>
+        <p class="text-muted-foreground">{{ t.matches.noMatches }}</p>
       </div>
 
       <!-- Match Detail Modal -->
@@ -135,7 +135,7 @@
               <img :src="selectedMatch.league.flag" class="h-4 w-4 rounded-sm" />
               <span>{{ selectedMatch.league.country }}</span>
               <ChevronRight class="h-3 w-3" />
-              <span>{{ selectedMatch.league.name }} - ROUND {{ selectedMatch.round }}</span>
+              <span>{{ selectedMatch.league.name }} - {{ t.matches.round }} {{ selectedMatch.round }}</span>
               <button class="ml-auto" @click="selectedMatch = null">
                 <X class="h-5 w-5" />
               </button>
@@ -151,9 +151,6 @@
               <router-link :to="{ name: 'team', params: { teamId: getTeamSlug(selectedMatch.home.name) } }" class="flex flex-col items-center gap-2 transition-transform hover:scale-105">
                 <img :src="selectedMatch.home.logo" :alt="selectedMatch.home.name" class="h-20 w-20 rounded-full bg-white p-2" />
                 <span class="font-semibold">{{ selectedMatch.home.name }}</span>
-                <span v-if="isFollowed(selectedMatch.home.name)" class="flex items-center gap-1 text-xs text-yellow-500">
-                  <Star class="h-3 w-3 fill-current" /> Following
-                </span>
               </router-link>
               <div class="text-center">
                 <div v-if="selectedMatch.status === 'scheduled'" class="text-3xl font-bold text-muted-foreground">-</div>
@@ -162,41 +159,38 @@
               <router-link :to="{ name: 'team', params: { teamId: getTeamSlug(selectedMatch.away.name) } }" class="flex flex-col items-center gap-2 transition-transform hover:scale-105">
                 <img :src="selectedMatch.away.logo" :alt="selectedMatch.away.name" class="h-20 w-20 rounded-full bg-white p-2" />
                 <span class="font-semibold">{{ selectedMatch.away.name }}</span>
-                <span v-if="isFollowed(selectedMatch.away.name)" class="flex items-center gap-1 text-xs text-yellow-500">
-                  <Star class="h-3 w-3 fill-current" /> Following
-                </span>
               </router-link>
             </div>
 
             <div class="mb-6 flex gap-2 border-b border-border">
               <button
-                v-for="tab in tabs"
-                :key="tab"
+                v-for="tab in modalTabs"
+                :key="tab.id"
                 class="px-4 py-2 text-sm font-medium transition-colors"
-                :class="activeTab === tab ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'"
-                @click="activeTab = tab"
+                :class="activeTab === tab.id ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'"
+                @click="activeTab = tab.id"
               >
-                {{ tab }}
+                {{ tab.label }}
               </button>
             </div>
 
             <div v-if="activeTab === 'MATCH'" class="space-y-4">
               <div class="flex gap-2">
-                <button class="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground">SUMMARY</button>
-                <button class="rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-muted-foreground hover:bg-primary/10 hover:text-primary">LINEUPS</button>
+                <button class="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground">{{ t.matches.summary }}</button>
+                <button class="rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-muted-foreground hover:bg-primary/10 hover:text-primary">{{ t.matches.lineups }}</button>
               </div>
               <div class="rounded-lg bg-muted/50 p-4">
-                <h3 class="mb-2 text-sm font-medium text-muted-foreground">ANALYSIS</h3>
-                <h2 class="mb-1 text-xl font-bold">Match Preview: {{ selectedMatch.home.name }} vs {{ selectedMatch.away.name }}</h2>
-                <p class="text-sm text-primary">Round {{ selectedMatch.round }} at {{ selectedMatch.venue }} on {{ selectedMatch.date }}</p>
+                <h3 class="mb-2 text-sm font-medium text-muted-foreground">{{ t.matches.analysis.toUpperCase() }}</h3>
+                <h2 class="mb-1 text-xl font-bold">{{ t.matches.matchPreview }}: {{ selectedMatch.home.name }} vs {{ selectedMatch.away.name }}</h2>
+                <p class="text-sm text-primary">{{ t.matches.round }} {{ selectedMatch.round }} at {{ selectedMatch.venue }} on {{ selectedMatch.date }}</p>
               </div>
             </div>
 
             <div v-if="activeTab === 'ODDS'" class="space-y-4">
               <div class="flex gap-2">
                 <button class="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground">1X2</button>
-                <button class="rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-muted-foreground">OVER/UNDER</button>
-                <button class="rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-muted-foreground">BTTS</button>
+                <button class="rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-muted-foreground">{{ t.matches.overUnder }}</button>
+                <button class="rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-muted-foreground">{{ t.matches.btts }}</button>
               </div>
               <div class="rounded-lg border border-border p-4">
                 <div class="mb-2 flex justify-between text-sm text-muted-foreground">
@@ -208,7 +202,7 @@
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <div class="h-8 w-20 rounded bg-green-600 px-2 py-1 text-xs font-bold text-white">UNIBET</div>
-                    <span class="rounded border border-border px-2 py-0.5 text-xs">LIVE</span>
+                    <span class="rounded border border-border px-2 py-0.5 text-xs">{{ t.matches.live.toUpperCase() }}</span>
                   </div>
                   <span class="rounded bg-primary/20 px-3 py-1 text-sm font-medium text-primary">↑ {{ selectedMatch.odds.home }}</span>
                   <span class="rounded bg-muted px-3 py-1 text-sm font-medium">{{ selectedMatch.odds.draw }}</span>
@@ -218,12 +212,12 @@
             </div>
 
             <div v-if="activeTab === 'H2H'" class="text-center text-muted-foreground">
-              Head to head statistics coming soon...
+              {{ t.matches.h2h }} coming soon...
             </div>
 
             <div v-if="activeTab === 'STANDINGS'">
-              <router-link :to="{ name: 'standings', params: { leagueId: 1 } }" class="inline-flex items-center gap-2 text-primary hover:underline">
-                View full standings
+              <router-link :to="{ name: 'standings', params: { leagueId: 208 } }" class="inline-flex items-center gap-2 text-primary hover:underline">
+                {{ t.matches.viewFullStandings }}
                 <ChevronRight class="h-4 w-4" />
               </router-link>
             </div>
@@ -239,15 +233,23 @@ import { ref, computed, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 import { Star, ChevronLeft, ChevronRight, Calendar as CalendarIcon, X } from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
+import { useLanguage } from '@/composables/useLanguage'
 
-const filters = [
-  { id: 'all', label: 'All' },
-  { id: 'live', label: 'Live' },
-  { id: 'ft', label: 'Full-time' },
-  { id: 'scheduled', label: 'Scheduled' }
-]
+const { t } = useLanguage()
 
-const tabs = ['MATCH', 'ODDS', 'H2H', 'STANDINGS']
+const filters = computed(() => [
+  { id: 'all', label: t.value.matches.all },
+  { id: 'live', label: t.value.matches.live },
+  { id: 'ft', label: t.value.matches.fullTime },
+  { id: 'scheduled', label: t.value.matches.scheduled }
+])
+
+const modalTabs = computed(() => [
+  { id: 'MATCH', label: t.value.matches.match },
+  { id: 'ODDS', label: t.value.matches.odds },
+  { id: 'H2H', label: t.value.matches.h2h },
+  { id: 'STANDINGS', label: t.value.matches.standings }
+])
 
 const activeFilter = ref('all')
 const activeTab = ref('MATCH')
@@ -272,15 +274,7 @@ const teamIds = {
   'Westerlo': 357,
   'La Louvière': 6722,
   'OH Leuven': 1947,
-  'Dender': 2741,
-  'Brighton': 51,
-  'Everton': 45,
-  'Leeds': 63,
-  'Arsenal': 42,
-  'Chelsea': 49,
-  'West Ham': 48,
-  'Liverpool': 40,
-  'Newcastle': 34
+  'Dender': 2741
 }
 
 const getTeamSlug = (teamName) => teamIds[teamName] || teamName.toLowerCase().replace(/\s+/g, '-')
@@ -354,62 +348,6 @@ const allLeagues = ref([
       }
     ]
   },
-  {
-    id: 2,
-    country: 'ENGLAND',
-    name: 'Premier League',
-    flag: 'https://flagcdn.com/w40/gb-eng.png',
-    matches: [
-      {
-        id: 4,
-        time: '16:00',
-        date: '31.01.2026',
-        round: 24,
-        venue: 'Amex Stadium',
-        status: 'scheduled',
-        home: { name: 'Brighton', logo: 'https://cdn.sportmonks.com/images/soccer/teams/13/51.png', goals: null },
-        away: { name: 'Everton', logo: 'https://cdn.sportmonks.com/images/soccer/teams/13/45.png', goals: null },
-        odds: { home: '1.84', draw: '3.65', away: '4.30' },
-        league: { country: 'ENGLAND', name: 'Premier League', flag: 'https://flagcdn.com/w40/gb-eng.png' }
-      },
-      {
-        id: 5,
-        time: '16:00',
-        date: '31.01.2026',
-        round: 24,
-        venue: 'Elland Road',
-        status: 'scheduled',
-        home: { name: 'Leeds', logo: 'https://cdn.sportmonks.com/images/soccer/teams/31/63.png', goals: null },
-        away: { name: 'Arsenal', logo: 'https://cdn.sportmonks.com/images/soccer/teams/10/42.png', goals: null },
-        odds: { home: '6.50', draw: '4.25', away: '1.50' },
-        league: { country: 'ENGLAND', name: 'Premier League', flag: 'https://flagcdn.com/w40/gb-eng.png' }
-      },
-      {
-        id: 6,
-        time: '18:30',
-        date: '31.01.2026',
-        round: 24,
-        venue: 'Stamford Bridge',
-        status: 'scheduled',
-        home: { name: 'Chelsea', logo: 'https://cdn.sportmonks.com/images/soccer/teams/17/49.png', goals: null },
-        away: { name: 'West Ham', logo: 'https://cdn.sportmonks.com/images/soccer/teams/16/48.png', goals: null },
-        odds: { home: '1.50', draw: '4.60', away: '5.75' },
-        league: { country: 'ENGLAND', name: 'Premier League', flag: 'https://flagcdn.com/w40/gb-eng.png' }
-      },
-      {
-        id: 7,
-        time: '21:00',
-        date: '31.01.2026',
-        round: 24,
-        venue: 'Anfield',
-        status: 'scheduled',
-        home: { name: 'Liverpool', logo: 'https://cdn.sportmonks.com/images/soccer/teams/8/40.png', goals: null },
-        away: { name: 'Newcastle', logo: 'https://cdn.sportmonks.com/images/soccer/teams/2/34.png', goals: null },
-        odds: { home: '1.73', draw: '4.00', away: '4.40' },
-        league: { country: 'ENGLAND', name: 'Premier League', flag: 'https://flagcdn.com/w40/gb-eng.png' }
-      }
-    ]
-  }
 ])
 
 const isFollowed = (teamName) => followedTeams.value.includes(teamName)
@@ -460,11 +398,11 @@ const nextDay = () => {}
 
 onMounted(() => {
   setTimeout(() => {
-    toast('⚽ GOAL! Antwerp 1 - 0 Club Brugge', {
+    toast(`⚽ ${t.value.matches.goal}! Antwerp 1 - 0 Club Brugge`, {
       description: "45' - M. Janssen scores from the penalty spot!",
       duration: 8000,
       action: {
-        label: 'View Match',
+        label: t.value.matches.viewMatch,
         onClick: () => {
           const match = allLeagues.value[0].matches[0]
           openMatch(match)
@@ -474,8 +412,8 @@ onMounted(() => {
   }, 2000)
 
   setTimeout(() => {
-    toast.info('🔔 Match Starting Soon', {
-      description: 'Antwerp vs Club Brugge kicks off in 15 minutes',
+    toast.info(`🔔 ${t.value.matches.matchStartingSoon}`, {
+      description: `Antwerp vs Club Brugge ${t.value.matches.kicksOffIn} 15 ${t.value.matches.minutes}`,
       duration: 5000
     })
   }, 6000)
