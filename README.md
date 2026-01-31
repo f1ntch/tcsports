@@ -6,7 +6,8 @@ A sports platform built with Vue 3 and Supabase. Users can sign up, sign in, and
 
 - **Home** – Landing page with a “Get Started” (login) or “Dashboard” link depending on auth state.
 - **Login** – Sign in or sign up with email and password (Supabase Auth).
-- **Dashboard** – Protected area showing the current user’s email and a sign-out button.
+- **Dashboard** – Protected area showing the current user’s email, a list of recent sports articles (with infinite scroll), and a sign-out button. Click an article to open its detail page.
+- **Article Detail** – Protected page at `/article/:id` showing the full article (title, sport, source, date, media, tags) with a back link to the dashboard.
 
 The database schema supports (for future use):
 
@@ -22,13 +23,14 @@ The database schema supports (for future use):
 - **Vue 3** (Composition API, `<script setup>`) with **Vite**.
 - **Vuetify 3** for UI; **Vue Router** for routes; **Pinia** for state (auth store).
 - **Router guards**:
-  - Routes with `meta: { auth: true }` (e.g. `/dashboard`) redirect to `/login` if not signed in.
+  - Routes with `meta: { auth: true }` (e.g. `/dashboard`, `/article/:id`) redirect to `/login` if not signed in.
   - Routes with `meta: { guest: true }` (e.g. `/login`) redirect to `/dashboard` if already signed in.
 
 ### Auth
 
 - **Supabase Auth** handles sign up, sign in, and sign out.
 - `src/stores/auth.js` (Pinia) exposes `user`, `loading`, and methods: `init()`, `signIn()`, `signUp()`, `signOut()`.
+- `src/stores/articles.js` (Pinia) exposes `articles`, `loading`, `loadingMore`, `totalCount`, and methods: `fetchArticles()`, `fetchNextPage()`, `fetchArticle(id)`, `hasMore()` for paginated article listing and single-article fetch.
 - On load, the router waits for `auth.init()` (which restores session and subscribes to auth changes) before applying guards.
 - Supabase client is created in `src/lib/supabase.js` from env vars; the app can run without Supabase (with limited functionality and warnings).
 
@@ -69,11 +71,13 @@ tcsports/
 │   ├── router/
 │   │   └── index.js         # Routes and auth guards
 │   ├── stores/
-│   │   └── auth.js          # Auth state and methods
+│   │   ├── auth.js          # Auth state and methods
+│   │   └── articles.js      # Articles list, pagination, single-article fetch
 │   └── views/
 │       ├── Home.vue         # Landing
 │       ├── Login.vue        # Sign in / sign up
-│       └── Dashboard.vue    # Protected dashboard
+│       ├── Dashboard.vue    # Protected dashboard (articles list, infinite scroll)
+│       └── ArticleDetail.vue # Article detail page (/article/:id)
 ├── database/
 │   ├── supabase_migration.sql   # Full schema, RLS, classification trigger
 │   └── *.sql                    # Optional per-table scripts
@@ -140,4 +144,4 @@ npm run preview
 
 ---
 
-**Summary:** TC Sports is a Vue 3 + Supabase sports app with email auth, a simple dashboard, and a database ready for articles, user interests, saved articles, and AI classification. Configure Supabase, run the migration, set env vars, and use `npm run dev` to run it locally.
+**Summary:** TC Sports is a Vue 3 + Supabase sports app with email auth, a dashboard that lists sports articles with infinite scroll, article detail pages, and a database ready for user interests, saved articles, and AI classification. Configure Supabase, run the migration, set env vars, and use `npm run dev` to run it locally.
