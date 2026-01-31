@@ -4,7 +4,7 @@
       <v-col cols="12" sm="8" md="4">
         <v-card class="pa-4">
           <v-card-title class="text-h5 text-center">
-            {{ isSignUp ? 'Create Account' : 'Sign In' }}
+            {{ isSignUp ? "Create Account" : "Sign In" }}
           </v-card-title>
           <v-card-text>
             <v-form @submit.prevent="handleSubmit">
@@ -25,6 +25,9 @@
               <v-alert v-if="error" type="error" class="mb-4">
                 {{ error }}
               </v-alert>
+              <v-alert v-if="emailConfirmationSent" type="success" class="mb-4">
+                Check your email to confirm your account, then sign in below.
+              </v-alert>
               <v-btn
                 type="submit"
                 color="primary"
@@ -32,13 +35,13 @@
                 size="large"
                 :loading="loading"
               >
-                {{ isSignUp ? 'Sign Up' : 'Sign In' }}
+                {{ isSignUp ? "Sign Up" : "Sign In" }}
               </v-btn>
             </v-form>
           </v-card-text>
           <v-card-actions class="justify-center">
             <v-btn variant="text" @click="isSignUp = !isSignUp">
-              {{ isSignUp ? 'Already have an account?' : 'Need an account?' }}
+              {{ isSignUp ? "Already have an account?" : "Need an account?" }}
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -48,34 +51,41 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
 
-const auth = useAuthStore()
-const router = useRouter()
+const auth = useAuthStore();
+const router = useRouter();
 
-const email = ref('')
-const password = ref('')
-const isSignUp = ref(false)
-const loading = ref(false)
-const error = ref('')
+const email = ref("");
+const password = ref("");
+const isSignUp = ref(false);
+const loading = ref(false);
+const error = ref("");
+const emailConfirmationSent = ref(false);
 
 async function handleSubmit() {
-  loading.value = true
-  error.value = ''
+  loading.value = true;
+  error.value = "";
+  emailConfirmationSent.value = false;
   try {
     if (isSignUp.value) {
-      await auth.signUp(email.value, password.value)
+      const result = await auth.signUp(email.value, password.value);
+      if (result?.needsEmailConfirmation) {
+        emailConfirmationSent.value = true;
+        // Stay on login; user must confirm email then sign in
+      } else {
+        router.push("/dashboard");
+      }
     } else {
-      await auth.signIn(email.value, password.value)
+      await auth.signIn(email.value, password.value);
+      router.push("/dashboard");
     }
-    router.push('/dashboard')
   } catch (e) {
-    error.value = e.message
+    error.value = e.message;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>
-

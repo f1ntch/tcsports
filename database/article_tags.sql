@@ -7,7 +7,9 @@ CREATE TABLE article_tags (
     CONSTRAINT fk_article_tags_article 
         FOREIGN KEY (article_id) REFERENCES articles(id),
     CONSTRAINT fk_article_tags_tag_type 
-        FOREIGN KEY (tag_type_id) REFERENCES tag_types(id)
+        FOREIGN KEY (tag_type_id) REFERENCES tag_types(id),
+    CONSTRAINT uq_article_tags 
+        UNIQUE (article_id, tag_type_id, tagname)
 );
 
 -- Create indexes on foreign keys for join performance
