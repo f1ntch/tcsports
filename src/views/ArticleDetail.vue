@@ -55,6 +55,19 @@
               {{ article.source }}
             </v-chip>
           </div>
+          <div class="d-flex justify-center mt-8 pt-6">
+            <v-btn
+              variant="tonal"
+              color="primary"
+              size="small"
+              :prepend-icon="
+                canShare ? 'mdi-share-variant' : 'mdi-content-copy'
+              "
+              @click="handleShare"
+            >
+              {{ canShare ? "Share" : "Copy link" }}
+            </v-btn>
+          </div>
         </header>
 
         <section v-if="media.length" class="article-detail__media mb-6">
@@ -109,7 +122,28 @@
           This article has no full text stored. Title, source, and metadata are
           shown above.
         </p>
+
+        <div class="d-flex justify-center mt-8 pt-6">
+          <v-btn
+            variant="tonal"
+            color="primary"
+            size="small"
+            :prepend-icon="canShare ? 'mdi-share-variant' : 'mdi-content-copy'"
+            @click="handleShare"
+          >
+            {{ canShare ? "Share" : "Copy link" }}
+          </v-btn>
+        </div>
       </article>
+
+      <v-snackbar
+        v-model="snackbar"
+        :timeout="2500"
+        color="success"
+        location="bottom"
+      >
+        Link copied to clipboard
+      </v-snackbar>
     </v-container>
   </div>
 </template>
@@ -124,6 +158,54 @@ const articlesStore = useArticlesStore();
 
 const article = ref(null);
 const error = ref("");
+const snackbar = ref(false);
+
+const shareUrl = computed(() => {
+  if (typeof window === "undefined" || !route.params.id) return "";
+  return `${window.location.origin}/article/${route.params.id}`;
+});
+
+const canShare = computed(() => {
+  return typeof navigator !== "undefined" && !!navigator.share;
+});
+
+async function handleShare() {
+  if (!shareUrl.value) return;
+  const title = article.value?.title ?? "Article";
+  const text = article.value?.source
+    ? `${title} (${article.value.source})`
+    : title;
+  if (canShare.value) {
+    try {
+      await navigator.share({
+        title,
+        text,
+        url: shareUrl.value,
+      });
+    } catch (e) {
+      if (e.name !== "AbortError") copyLink();
+    }
+  } else {
+    copyLink();
+  }
+}
+
+async function copyLink() {
+  if (!shareUrl.value) return;
+  try {
+    await navigator.clipboard.writeText(shareUrl.value);
+    snackbar.value = true;
+  } catch {
+    // fallback for older browsers
+    const textarea = document.createElement("textarea");
+    textarea.value = shareUrl.value;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+    snackbar.value = true;
+  }
+}
 
 const media = computed(() => {
   if (!article.value?.article_media) return [];
