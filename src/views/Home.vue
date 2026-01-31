@@ -1,244 +1,76 @@
 <template>
-  <div class="home-page">
-    <v-container class="home py-6">
-      <header class="text-center mb-8">
-        <h1 class="text-h3 font-weight-bold text-primary">TC Sports</h1>
-        <p class="text-body-1 text-medium-emphasis mt-2">Your sports platform</p>
-      </header>
-
-      <v-alert v-if="!isSupabaseConfigured" type="warning" class="mb-6">
-        Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env
-      </v-alert>
-
-      <section class="articles-section">
-        <h2 class="text-h6 font-weight-medium mb-4 text-medium-emphasis">
-          Recent articles
-        </h2>
-
-        <v-progress-linear
-          v-if="articlesStore.loading"
-          indeterminate
-          color="primary"
-          class="mb-4 rounded"
+  <AppLayout>
+    <v-container class="py-12">
+      <div class="d-flex flex-column align-center text-center">
+        <v-img
+          src="/images/tres-comas.png"
+          alt="Tres Comas - Three bulls with sombreros"
+          width="100%"
+          max-width="700"
+          aspect-ratio="16/9"
+          class="rounded-xl mb-8"
+          cover
         />
 
-        <v-alert
-          v-else-if="articlesStore.articles.length === 0"
-          type="info"
-          variant="tonal"
-          rounded="lg"
-          class="mb-4"
-        >
-          No articles yet.
-        </v-alert>
+        <h1 class="text-h3 text-md-h2 font-weight-bold mb-4">
+          {{ t.home.welcome }} <span class="text-primary">TC Sports</span>
+        </h1>
+        
+        <p class="text-body-1 text-medium-emphasis mb-8" style="max-width: 600px;">
+          {{ t.home.description }}
+        </p>
 
-        <div v-else class="articles-list">
-          <article
-            v-for="article in articlesStore.articles"
-            :key="article.id"
-            class="article-card"
-          >
-            <div
-              class="article-card__wrap"
-              role="button"
-              tabindex="0"
-              @click="goToArticle(article.id)"
-              @keydown.enter="goToArticle(article.id)"
-              @keydown.space.prevent="goToArticle(article.id)"
-            >
-              <v-card
-                variant="flat"
-                rounded="lg"
-                class="article-card__inner pa-4"
-                elevation="0"
-              >
-                <h3 class="article-card__title text-h6 font-weight-medium mb-1">
-                  {{ article.title }}
-                </h3>
-                <span
-                  class="article-card__date text-caption text-medium-emphasis mb-2 d-block"
-                >
-                  {{ formatDate(article.created_at) }}
-                </span>
-                <div class="d-flex align-center flex-wrap gap-2 mb-2">
-                  <v-chip
-                    v-if="article.source"
-                    size="small"
-                    color="primary"
-                    variant="tonal"
-                    rounded="pill"
-                  >
-                    {{ article.source }}
-                  </v-chip>
-                  <v-chip
-                    v-if="article.sports?.name"
-                    size="small"
-                    color="primary"
-                    variant="tonal"
-                    rounded="pill"
-                  >
-                    {{ article.sports.name }}
-                  </v-chip>
-                </div>
-              </v-card>
-            </div>
-          </article>
-
-          <div ref="sentinelRef" class="scroll-sentinel" aria-hidden="true" />
-
-          <div
-            v-if="articlesStore.loadingMore"
-            class="d-flex justify-center py-6"
-          >
-            <v-progress-circular indeterminate color="primary" size="32" />
-          </div>
-          <p
-            v-else-if="
-              articlesStore.articles.length > 0 && !articlesStore.hasMore()
-            "
-            class="text-center text-caption text-medium-emphasis py-4"
-          >
-            You've seen all {{ articlesStore.totalCount }} articles.
-          </p>
+        <div class="d-flex flex-column flex-sm-row ga-4 mb-12">
+          <v-btn :to="{ name: 'register' }" color="primary" size="large" min-width="180" rounded="pill" class="px-8">
+            {{ t.home.getStarted }}
+          </v-btn>
+          <v-btn :to="{ name: 'live' }" variant="outlined" color="primary" size="large" min-width="180" rounded="pill" class="px-8">
+            {{ t.home.browseArticles }}
+          </v-btn>
         </div>
-      </section>
-    </v-container>
 
-    <v-btn
-      class="fab-get-newest"
-      color="primary"
-      size="small"
-      variant="flat"
-      rounded="pill"
-      :loading="articlesStore.loading"
-      @click="refreshArticles"
-    >
-      Get Newest
-    </v-btn>
-  </div>
+        <v-row class="w-100" style="max-width: 1000px;">
+          <v-col cols="12" md="4" v-for="feature in features" :key="feature.title">
+            <v-card variant="outlined" class="h-100 pa-6 text-left feature-card">
+              <h3 class="text-h6 font-weight-bold mb-2">{{ feature.title }}</h3>
+              <p class="text-body-2 text-medium-emphasis">{{ feature.description }}</p>
+            </v-card>
+          </v-col>
+        </v-row>
+      </div>
+    </v-container>
+  </AppLayout>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch } from "vue";
-import { useRouter } from "vue-router";
-import { useArticlesStore } from "@/stores/articles";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import { computed } from 'vue'
+import AppLayout from '@/components/AppLayout.vue'
+import { useLanguage } from '@/composables/useLanguage'
 
-const articlesStore = useArticlesStore();
-const router = useRouter();
-const sentinelRef = ref(null);
+const { t } = useLanguage()
 
-let observer = null;
-
-function setupObserver() {
-  if (observer || !sentinelRef.value) return;
-  observer = new IntersectionObserver(
-    (entries) => {
-      const [entry] = entries;
-      if (
-        entry?.isIntersecting &&
-        articlesStore.hasMore() &&
-        !articlesStore.loading &&
-        !articlesStore.loadingMore
-      ) {
-        articlesStore.fetchNextPage();
-      }
-    },
-    { rootMargin: "200px", threshold: 0 },
-  );
-  observer.observe(sentinelRef.value);
-}
-
-onMounted(() => {
-  articlesStore.fetchArticles(1, 20);
-});
-
-watch(
-  sentinelRef,
-  (el) => {
-    if (el) setupObserver();
+const features = computed(() => [
+  {
+    title: t.value.home.features.personalized,
+    description: t.value.home.features.personalizedDesc,
   },
-  { flush: "post" },
-);
-
-onUnmounted(() => {
-  observer?.disconnect();
-});
-
-function formatDate(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, { dateStyle: "medium" });
-}
-
-function goToArticle(id) {
-  router.push({ name: "article", params: { id: String(id) } });
-}
-
-async function refreshArticles() {
-  await articlesStore.fetchArticles(1, 20);
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
+  {
+    title: t.value.home.features.liveUpdates,
+    description: t.value.home.features.liveUpdatesDesc,
+  },
+  {
+    title: t.value.home.features.archive,
+    description: t.value.home.features.archiveDesc,
+  },
+])
 </script>
 
 <style scoped>
-.home-page {
-  position: relative;
-  padding-bottom: 4rem;
+.feature-card {
+  transition: all 0.2s ease;
+  border-color: rgba(160, 160, 184, 0.2) !important;
 }
-
-.home {
-  max-width: 720px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.fab-get-newest {
-  position: fixed;
-  bottom: 1.25rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.articles-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.article-card__wrap {
-  cursor: pointer;
-  border-radius: 8px;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.06),
-    0 2px 8px rgba(0, 0, 0, 0.04);
-  transition:
-    box-shadow 0.25s ease,
-    transform 0.2s ease;
-}
-
-.article-card__wrap:hover {
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.15),
-    0 0 0 2px #00dc82,
-    0 6px 28px rgba(0, 220, 130, 0.4);
-  transform: translateY(-2px);
-}
-
-.article-card__inner {
-  box-shadow: none !important;
-}
-
-.article-card__title {
-  line-height: 1.35;
-  letter-spacing: 0.01em;
-}
-
-.scroll-sentinel {
-  height: 1px;
-  width: 100%;
-  pointer-events: none;
+.feature-card:hover {
+  border-color: rgba(168, 85, 247, 0.5) !important;
 }
 </style>
