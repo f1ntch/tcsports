@@ -1,156 +1,194 @@
 <template>
   <AppLayout>
-    <v-container class="py-8" v-if="article">
-      <v-btn variant="text" :to="{ name: 'live' }" class="mb-6 text-medium-emphasis">
-        <v-icon start>mdi-arrow-left</v-icon>
+    <div v-if="article" class="container mx-auto px-4 py-8">
+      <router-link
+        :to="{ name: 'live' }"
+        class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft class="h-4 w-4" />
         {{ t.article.backToFeed }}
-      </v-btn>
+      </router-link>
 
-      <v-row>
-        <v-col cols="12" lg="8">
-          <v-img :src="article.imageUrl" height="400" cover class="rounded-xl mb-6 position-relative">
-            <v-chip class="position-absolute" style="top: 16px; left: 16px;" color="surface" variant="flat">
+      <div class="grid gap-8 lg:grid-cols-8">
+        <div class="lg:col-span-5">
+          <div class="relative mb-6 aspect-video overflow-hidden rounded-xl bg-muted">
+            <img :src="article.imageUrl" :alt="article.title" class="h-full w-full object-cover" />
+            <span class="absolute left-4 top-4 rounded-md bg-card/90 px-2 py-1 text-sm font-medium">
               {{ article.sport.name }}
-            </v-chip>
-          </v-img>
+            </span>
+          </div>
 
-          <h1 class="text-h4 text-md-h3 font-weight-bold mb-4">{{ article.title }}</h1>
+          <h1 class="mb-4 text-2xl font-bold md:text-3xl">{{ article.title }}</h1>
 
-          <div class="d-flex flex-wrap align-center ga-4 text-body-2 text-medium-emphasis mb-4">
-            <div class="d-flex align-center ga-2">
-              <v-avatar color="primary" size="32">
-                <v-icon size="18">mdi-account</v-icon>
-              </v-avatar>
-              <span class="font-weight-medium text-high-emphasis">{{ article.author }}</span>
+          <div class="mb-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div class="flex items-center gap-2">
+              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <User class="h-4 w-4" />
+              </div>
+              <span class="font-medium text-foreground">{{ article.author }}</span>
             </div>
-            <span class="d-flex align-center ga-1">
-              <v-icon size="16">mdi-calendar</v-icon>
+            <span class="flex items-center gap-1">
+              <Calendar class="h-4 w-4" />
               {{ formatDate(article.createdAt) }}
             </span>
-            <span class="d-flex align-center ga-1">
-              <v-icon size="16">mdi-clock-outline</v-icon>
+            <span class="flex items-center gap-1">
+              <Clock class="h-4 w-4" />
               {{ formatTime(article.createdAt) }}
             </span>
-            <v-chip size="small" variant="outlined">{{ getRelativeTime(article.createdAt) }}</v-chip>
+            <span class="rounded-md border border-border px-2 py-0.5 text-xs">
+              {{ getRelativeTime(article.createdAt) }}
+            </span>
           </div>
 
-          <div class="d-flex ga-2 mb-6">
-            <v-menu>
-              <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" variant="outlined" size="small">
-                  <v-icon start>mdi-share-variant</v-icon>
-                  {{ t.article.share }}
-                </v-btn>
-              </template>
-              <v-list density="compact">
-                <v-list-item @click="copyLink">
-                  <template v-slot:prepend>
-                    <v-icon :color="linkCopied ? 'success' : undefined">
-                      {{ linkCopied ? 'mdi-check' : 'mdi-link' }}
-                    </v-icon>
-                  </template>
-                  <v-list-item-title>{{ linkCopied ? t.article.linkCopied : t.article.copyLink }}</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="shareToFacebook">
-                  <template v-slot:prepend><v-icon>mdi-facebook</v-icon></template>
-                  <v-list-item-title>{{ t.article.shareOnFacebook }}</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="shareToWhatsApp">
-                  <template v-slot:prepend><v-icon>mdi-whatsapp</v-icon></template>
-                  <v-list-item-title>{{ t.article.shareOnWhatsApp }}</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-
-            <v-btn
-              :variant="isArchived ? 'flat' : 'outlined'"
-              :color="isArchived ? 'primary' : undefined"
-              size="small"
+          <div class="mb-6 flex flex-wrap gap-2">
+            <div class="relative" ref="shareMenuRef">
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-xs hover:bg-accent hover:text-accent-foreground"
+                @click="shareOpen = !shareOpen"
+              >
+                <Share2 class="h-4 w-4" />
+                {{ t.article.share }}
+              </button>
+              <div
+                v-if="shareOpen"
+                class="absolute left-0 top-full z-10 mt-1 min-w-[180px] rounded-md border border-border bg-popover py-1 shadow-lg"
+              >
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
+                  @click="copyLink(); shareOpen = false"
+                >
+                  <Link v-if="!linkCopied" class="h-4 w-4" />
+                  <Check v-else class="h-4 w-4 text-primary" />
+                  {{ linkCopied ? t.article.linkCopied : t.article.copyLink }}
+                </button>
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
+                  @click="shareToFacebook"
+                >
+                  <Share2 class="h-4 w-4" />
+                  {{ t.article.shareOnFacebook }}
+                </button>
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
+                  @click="shareToWhatsApp"
+                >
+                  <Share2 class="h-4 w-4" />
+                  {{ t.article.shareOnWhatsApp }}
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
+              :class="
+                isArchived
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground'
+              "
               @click="toggleArchive"
             >
-              <v-icon start>{{ isArchived ? 'mdi-bookmark-check' : 'mdi-bookmark-outline' }}</v-icon>
+              <BookmarkCheck v-if="isArchived" class="h-4 w-4" />
+              <Bookmark v-else class="h-4 w-4" />
               {{ isArchived ? t.article.removeFromArchive : t.article.saveToArchive }}
-            </v-btn>
+            </button>
           </div>
 
-          <v-divider class="mb-6" />
+          <div class="mb-6 h-px bg-border" />
 
-          <p class="text-h6 font-weight-medium mb-6">{{ article.summary }}</p>
+          <p class="mb-6 text-lg font-medium">{{ article.summary }}</p>
 
-          <div class="article-content text-body-1 text-medium-emphasis">
-            <p v-for="(paragraph, idx) in article.content.split('\n\n')" :key="idx" class="mb-4">
+          <div class="article-content space-y-4 text-muted-foreground">
+            <p v-for="(paragraph, idx) in article.content.split('\n\n')" :key="idx">
               {{ paragraph }}
             </p>
           </div>
 
-          <v-divider class="my-8" />
+          <div class="my-8 h-px bg-border" />
 
           <div>
-            <h2 class="text-h6 font-weight-bold mb-4">{{ t.article.tags }}</h2>
-            <div class="d-flex flex-wrap ga-2">
-              <v-chip
+            <h2 class="mb-4 text-lg font-semibold">{{ t.article.tags }}</h2>
+            <div class="flex flex-wrap gap-2">
+              <span
                 v-for="tag in article.tags"
                 :key="tag"
-                variant="tonal"
-                color="primary"
+                class="rounded-md bg-primary/10 px-2.5 py-0.5 text-sm font-medium text-primary"
               >
                 {{ tag }}
-              </v-chip>
+              </span>
             </div>
           </div>
-        </v-col>
+        </div>
 
-        <v-col cols="12" lg="4">
-          <v-card v-if="relatedArticles.length" class="mb-6">
-            <v-card-title class="text-h6">{{ t.article.relatedArticles }}</v-card-title>
-            <v-card-text>
-              <div class="d-flex flex-column ga-4">
-                <router-link
-                  v-for="related in relatedArticles"
-                  :key="related.id"
-                  :to="{ name: 'article', params: { id: related.id } }"
-                  class="text-decoration-none d-flex ga-3"
-                >
-                  <v-img :src="related.imageUrl" width="80" height="60" cover class="rounded flex-shrink-0" />
-                  <div>
-                    <h4 class="text-body-2 font-weight-medium text-high-emphasis related-title">{{ related.title }}</h4>
-                    <span class="text-caption text-medium-emphasis">{{ getRelativeTime(related.createdAt) }}</span>
-                  </div>
-                </router-link>
-              </div>
-            </v-card-text>
-          </v-card>
+        <aside class="lg:col-span-3">
+          <div v-if="relatedArticles.length" class="mb-6 rounded-xl border border-border bg-card p-4">
+            <h3 class="mb-4 text-lg font-semibold">{{ t.article.relatedArticles }}</h3>
+            <div class="flex flex-col gap-4">
+              <router-link
+                v-for="related in relatedArticles"
+                :key="related.id"
+                :to="{ name: 'article', params: { id: related.id } }"
+                class="flex gap-3 rounded-md p-1 transition-colors hover:bg-accent"
+              >
+                <img
+                  :src="related.imageUrl"
+                  :alt="related.title"
+                  class="h-14 w-20 shrink-0 rounded object-cover"
+                />
+                <div class="min-w-0">
+                  <h4 class="line-clamp-2 text-sm font-medium text-card-foreground">{{ related.title }}</h4>
+                  <span class="text-xs text-muted-foreground">{{ getRelativeTime(related.createdAt) }}</span>
+                </div>
+              </router-link>
+            </div>
+          </div>
 
-          <v-card>
-            <v-card-title class="text-h6">{{ t.article.popularTags }}</v-card-title>
-            <v-card-text>
-              <div class="d-flex flex-wrap ga-2">
-                <v-chip
-                  v-for="tag in allTags.slice(0, 12)"
-                  :key="tag"
-                  variant="outlined"
-                  size="small"
-                >
-                  {{ tag }}
-                </v-chip>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
+          <div class="rounded-xl border border-border bg-card p-4">
+            <h3 class="mb-4 text-lg font-semibold">{{ t.article.popularTags }}</h3>
+            <div class="flex flex-wrap gap-2">
+              <span
+                v-for="tag in allTags.slice(0, 12)"
+                :key="tag"
+                class="rounded-md border border-border px-2 py-0.5 text-xs"
+              >
+                {{ tag }}
+              </span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
 
-    <v-container v-else class="d-flex flex-column align-center justify-center py-16 text-center">
-      <h1 class="text-h5 font-weight-bold mb-2">{{ t.article.articleNotFound }}</h1>
-      <p class="text-body-1 text-medium-emphasis mb-6">{{ t.article.articleNotFoundDesc }}</p>
-      <v-btn :to="{ name: 'live' }" color="primary">{{ t.article.backToFeed }}</v-btn>
-    </v-container>
+    <div v-else class="container mx-auto flex flex-col items-center justify-center px-4 py-16 text-center">
+      <h1 class="mb-2 text-xl font-semibold">{{ t.article.articleNotFound }}</h1>
+      <p class="mb-6 text-muted-foreground">{{ t.article.articleNotFoundDesc }}</p>
+      <router-link
+        :to="{ name: 'live' }"
+        class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+      >
+        {{ t.article.backToFeed }}
+      </router-link>
+    </div>
   </AppLayout>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+import {
+  ArrowLeft,
+  User,
+  Calendar,
+  Clock,
+  Share2,
+  Link,
+  Check,
+  Bookmark,
+  BookmarkCheck,
+} from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
 import { useLanguage } from '@/composables/useLanguage'
 
@@ -160,6 +198,8 @@ const { t } = useLanguage()
 const mockArchivedIds = ['2', '5']
 const isArchived = ref(mockArchivedIds.includes(route.params.id))
 const linkCopied = ref(false)
+const shareOpen = ref(false)
+const shareMenuRef = ref(null)
 
 const mockArticles = [
   {
@@ -184,7 +224,7 @@ With millions of fans watching worldwide, the pressure will be immense. But thes
   {
     id: '2',
     title: 'NBA All-Star Weekend: Records Shattered',
-    summary: 'The annual showcase of basketball\'s finest talents delivered unforgettable moments.',
+    summary: "The annual showcase of basketball's finest talents delivered unforgettable moments.",
     content: `The NBA All-Star Weekend delivered on its promise of entertainment, with several records falling across the various competitions.
 
 The Three-Point Contest saw a new benchmark set, with the winner draining an incredible 31 out of 34 attempts in the final round.
@@ -260,19 +300,24 @@ Lap time analysis reveals their car is particularly strong in the high-speed cor
   },
 ]
 
-const article = computed(() => mockArticles.find(a => a.id === route.params.id))
+const article = computed(() => mockArticles.find((a) => a.id === route.params.id))
 
 const relatedArticles = computed(() => {
   if (!article.value) return []
   return mockArticles
-    .filter(a => a.sport.id === article.value.sport.id && a.id !== article.value.id)
+    .filter((a) => a.sport.id === article.value.sport.id && a.id !== article.value.id)
     .slice(0, 3)
 })
 
-const allTags = computed(() => [...new Set(mockArticles.flatMap(a => a.tags))])
+const allTags = computed(() => [...new Set(mockArticles.flatMap((a) => a.tags))])
 
 const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+  return new Date(dateString).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
 }
 
 const formatTime = (dateString) => {
@@ -287,31 +332,38 @@ const getRelativeTime = (dateString) => {
   return diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`
 }
 
-const toggleArchive = () => isArchived.value = !isArchived.value
+const toggleArchive = () => (isArchived.value = !isArchived.value)
 
 const copyLink = async () => {
   await navigator.clipboard.writeText(window.location.href)
   linkCopied.value = true
-  setTimeout(() => linkCopied.value = false, 2000)
+  setTimeout(() => (linkCopied.value = false), 2000)
 }
 
 const shareToFacebook = () => {
-  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank', 'width=600,height=400')
+  window.open(
+    `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`,
+    '_blank',
+    'width=600,height=400'
+  )
 }
 
 const shareToWhatsApp = () => {
   const text = encodeURIComponent(article.value?.title || 'Check out this article')
   window.open(`https://wa.me/?text=${text}%20${encodeURIComponent(window.location.href)}`, '_blank')
 }
+
+const closeShare = (e) => {
+  if (shareMenuRef.value && !shareMenuRef.value.contains(e.target)) {
+    shareOpen.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', closeShare))
+onUnmounted(() => document.removeEventListener('click', closeShare))
 </script>
 
 <style scoped>
-.related-title {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
 .article-content {
   line-height: 1.8;
 }

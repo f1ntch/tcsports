@@ -1,0 +1,75 @@
+/* shadcn design tokens from ui/app/globals.css */
+:root {
+  --background: oklch(0.985 0.002 300);
+  --foreground: oklch(0.18 0.03 285);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.03 285);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.03 285);
+  --primary: oklch(0.5 0.22 295);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.015 295);
+  --secondary-foreground: oklch(0.35 0.08 295);
+  --muted: oklch(0.95 0.01 295);
+  --muted-foreground: oklch(0.45 0.03 285);
+  --accent: oklch(0.55 0.18 195);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.55 0.22 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.88 0.025 295);
+  --input: oklch(0.95 0.01 295);
+  --ring: oklch(0.5 0.22 295);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.97 0.01 295);
+  --sidebar-foreground: oklch(0.18 0.03 285);
+  --sidebar-primary: oklch(0.5 0.22 295);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.92 0.025 295);
+  --sidebar-accent-foreground: oklch(0.35 0.08 295);
+  --sidebar-border: oklch(0.88 0.025 295);
+  --sidebar-ring: oklch(0.5 0.22 295);
+}
+
+.dark {
+  --background: oklch(0.15 0.04 285);
+  --foreground: oklch(0.95 0.01 300);
+  --card: oklch(0.2 0.05 285);
+  --card-foreground: oklch(0.95 0.01 300);
+  --popover: oklch(0.2 0.05 285);
+  --popover-foreground: oklch(0.95 0.01 300);
+  --primary: oklch(0.65 0.28 300);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.28 0.06 285);
+  --secondary-foreground: oklch(0.92 0.01 300);
+  --muted: oklch(0.25 0.05 285);
+  --muted-foreground: oklch(0.7 0.02 300);
+  --accent: oklch(0.7 0.18 195);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.55 0.22 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.3 0.06 285);
+  --input: oklch(0.28 0.05 285);
+  --ring: oklch(0.65 0.28 300);
+  --sidebar: oklch(0.18 0.05 285);
+  --sidebar-foreground: oklch(0.95 0.01 300);
+  --sidebar-primary: oklch(0.65 0.28 300);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.28 0.06 285);
+  --sidebar-accent-foreground: oklch(0.92 0.01 300);
+  --sidebar-border: oklch(0.3 0.06 285);
+  --sidebar-ring: oklch(0.65 0.28 300);
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-[var(--border)];
+  }
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}

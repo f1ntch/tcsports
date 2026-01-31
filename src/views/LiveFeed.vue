@@ -1,89 +1,87 @@
 <template>
   <AppLayout>
-    <v-container class="py-8">
+    <div class="container mx-auto px-4 py-8">
       <div class="mb-8">
-        <h1 class="text-h4 font-weight-bold">{{ t.liveFeed.title }}</h1>
-        <p class="text-body-1 text-medium-emphasis mt-2">{{ t.liveFeed.subtitle }}</p>
+        <h1 class="text-2xl font-bold md:text-3xl">{{ t.liveFeed.title }}</h1>
+        <p class="mt-2 text-muted-foreground">{{ t.liveFeed.subtitle }}</p>
       </div>
 
-      <div class="d-flex flex-column flex-sm-row ga-4 mb-8">
-        <v-text-field
-          v-model="searchQuery"
-          :placeholder="t.liveFeed.searchPlaceholder"
-          prepend-inner-icon="mdi-magnify"
-          variant="outlined"
-          density="comfortable"
-          hide-details
-          clearable
-          class="flex-grow-1"
-        />
-        <v-select
+      <div class="mb-8 flex flex-col gap-4 sm:flex-row">
+        <div class="relative flex-1">
+          <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            class="flex h-9 w-full rounded-md border border-input bg-transparent py-1 pl-9 pr-3 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            :placeholder="t.liveFeed.searchPlaceholder"
+          />
+        </div>
+        <select
           v-model="selectedSport"
-          :items="sportOptions"
-          item-title="name"
-          item-value="id"
-          prepend-inner-icon="mdi-filter"
-          variant="outlined"
-          density="comfortable"
-          hide-details
-          style="max-width: 200px;"
-        />
+          class="flex h-9 max-w-[200px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <option v-for="opt in sportOptions" :key="opt.id" :value="opt.id">{{ opt.name }}</option>
+        </select>
       </div>
 
       <template v-if="filteredArticles.length">
-        <v-row>
-          <v-col v-for="article in filteredArticles" :key="article.id" cols="12" sm="6" lg="4">
-            <v-card
-              :to="{ name: 'article', params: { id: article.id } }"
-              class="h-100 article-card"
-            >
-              <v-img :src="article.imageUrl" height="200" cover class="position-relative">
-                <div class="position-absolute" style="top: 12px; left: 12px;">
-                  <v-chip size="small" color="surface" variant="flat">
-                    {{ getSportName(article.sport.nameKey) }}
-                  </v-chip>
-                </div>
-                <div class="position-absolute" style="bottom: 12px; left: 12px;">
-                  <v-chip size="small" color="primary" variant="flat">
-                    {{ getRelativeTime(article.createdAt) }}
-                  </v-chip>
-                </div>
-              </v-img>
-              <v-card-text>
-                <h2 class="text-h6 font-weight-bold mb-2 article-title">{{ article.title }}</h2>
-                <p class="text-body-2 text-medium-emphasis mb-4 article-summary">{{ article.summary }}</p>
-                <div class="d-flex ga-4 text-caption text-medium-emphasis">
-                  <span class="d-flex align-center ga-1">
-                    <v-icon size="14">mdi-calendar</v-icon>
-                    {{ formatDate(article.createdAt) }}
-                  </span>
-                  <span class="d-flex align-center ga-1">
-                    <v-icon size="14">mdi-clock-outline</v-icon>
-                    {{ formatTime(article.createdAt) }}
-                  </span>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <router-link
+            v-for="article in filteredArticles"
+            :key="article.id"
+            :to="{ name: 'article', params: { id: article.id } }"
+            class="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-colors hover:border-primary/50 hover:shadow-md"
+          >
+            <div class="relative aspect-video overflow-hidden bg-muted">
+              <img :src="article.imageUrl" :alt="article.title" class="h-full w-full object-cover" />
+              <span class="absolute left-3 top-3 rounded-md bg-card/90 px-2 py-0.5 text-xs font-medium">
+                {{ getSportName(article.sport.nameKey) }}
+              </span>
+              <span class="absolute bottom-3 left-3 rounded-md bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
+                {{ getRelativeTime(article.createdAt) }}
+              </span>
+            </div>
+            <div class="flex flex-1 flex-col p-4">
+              <h2 class="mb-2 line-clamp-2 text-lg font-semibold text-card-foreground group-hover:text-primary">
+                {{ article.title }}
+              </h2>
+              <p class="mb-4 line-clamp-3 flex-1 text-sm text-muted-foreground">{{ article.summary }}</p>
+              <div class="flex gap-4 text-xs text-muted-foreground">
+                <span class="flex items-center gap-1">
+                  <Calendar class="h-3.5 w-3.5" />
+                  {{ formatDate(article.createdAt) }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <Clock class="h-3.5 w-3.5" />
+                  {{ formatTime(article.createdAt) }}
+                </span>
+              </div>
+            </div>
+          </router-link>
+        </div>
       </template>
 
-      <div v-else class="d-flex flex-column align-center py-16 text-center">
-        <v-avatar color="surface" size="80" class="mb-4">
-          <v-icon size="40" color="medium-emphasis">mdi-magnify</v-icon>
-        </v-avatar>
-        <h3 class="text-h6 font-weight-bold">{{ t.liveFeed.noArticles }}</h3>
-        <p class="text-body-2 text-medium-emphasis mt-1">{{ t.liveFeed.noArticlesDesc }}</p>
-        <v-btn variant="outlined" class="mt-4" @click="clearFilters">
+      <div v-else class="flex flex-col items-center py-16 text-center">
+        <div class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+          <Search class="h-10 w-10 text-muted-foreground" />
+        </div>
+        <h3 class="text-lg font-semibold">{{ t.liveFeed.noArticles }}</h3>
+        <p class="mt-1 text-sm text-muted-foreground">{{ t.liveFeed.noArticlesDesc }}</p>
+        <button
+          type="button"
+          class="mt-4 inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-xs hover:bg-accent hover:text-accent-foreground"
+          @click="clearFilters"
+        >
           {{ t.liveFeed.clearFilters }}
-        </v-btn>
+        </button>
       </div>
-    </v-container>
+    </div>
   </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import { Search, Calendar, Clock } from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
 import { useLanguage } from '@/composables/useLanguage'
 
@@ -104,7 +102,7 @@ const mockArticles = [
   {
     id: '2',
     title: 'NBA All-Star Weekend: Records Shattered',
-    summary: 'The annual showcase of basketball\'s finest talents delivered unforgettable moments.',
+    summary: "The annual showcase of basketball's finest talents delivered unforgettable moments.",
     createdAt: '2026-01-30T18:15:00Z',
     sport: { id: '2', nameKey: 'basketball' },
     imageUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80',
@@ -159,8 +157,9 @@ const sportOptions = computed(() => [
 const getSportName = (nameKey) => t.value.sports[nameKey] || nameKey
 
 const filteredArticles = computed(() => {
-  return mockArticles.filter(article => {
-    const matchesSearch = !searchQuery.value ||
+  return mockArticles.filter((article) => {
+    const matchesSearch =
+      !searchQuery.value ||
       article.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       article.summary.toLowerCase().includes(searchQuery.value.toLowerCase())
 
@@ -196,28 +195,3 @@ const clearFilters = () => {
   selectedSport.value = 'all'
 }
 </script>
-
-<style scoped>
-.article-card { 
-  transition: all 0.2s ease;
-  border-color: rgba(160, 160, 184, 0.2) !important;
-}
-.article-card:hover { 
-  border-color: rgba(168, 85, 247, 0.5) !important;
-  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.1) !important; 
-}
-.article-title { 
-  display: -webkit-box; 
-  -webkit-line-clamp: 2; 
-  line-clamp: 2;
-  -webkit-box-orient: vertical; 
-  overflow: hidden;
-}
-.article-summary {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>

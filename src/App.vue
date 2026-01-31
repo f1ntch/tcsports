@@ -1,50 +1,20 @@
 <template>
-  <v-app>
+  <div class="min-h-screen bg-background text-foreground">
     <router-view />
-  </v-app>
+  </div>
 </template>
 
-<style>
-:root {
-  --border-color: rgba(160, 160, 184, 0.15);
-}
+<script setup>
+import { onMounted } from 'vue'
 
-html {
-  overflow-y: auto !important;
-}
-
-body {
-  font-family: 'Inter', sans-serif !important;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.v-application {
-  font-family: 'Inter', sans-serif !important;
-}
-
-.v-card {
-  border-color: var(--border-color) !important;
-}
-
-.v-card--variant-outlined {
-  border-width: 1px !important;
-}
-
-.v-navigation-drawer {
-  border-color: var(--border-color) !important;
-}
-
-.v-divider {
-  border-color: var(--border-color) !important;
-  opacity: 1 !important;
-}
-
-.v-list-item--active {
-  background: rgba(168, 85, 247, 0.1) !important;
-}
-
-.v-footer {
-  border-color: var(--border-color) !important;
-}
-</style>
+onMounted(() => {
+  try {
+    const theme = localStorage.getItem('tc-sports-theme')
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  } catch {}
+})
+</script>
