@@ -46,6 +46,11 @@
               rounded="lg"
               class="article-card__inner pa-4"
               elevation="0"
+              role="button"
+              tabindex="0"
+              @click="goToArticle(article.id)"
+              @keydown.enter="goToArticle(article.id)"
+              @keydown.space.prevent="goToArticle(article.id)"
             >
               <div
                 class="d-flex flex-column flex-sm-row justify-space-between align-start gap-2 mb-2"
@@ -74,14 +79,6 @@
                   rounded="pill"
                 >
                   {{ article.sports.name }}
-                </v-chip>
-                <v-chip
-                  v-if="article.language_code"
-                  size="x-small"
-                  variant="outlined"
-                  rounded="pill"
-                >
-                  {{ article.language_code }}
                 </v-chip>
               </div>
             </v-card>
@@ -175,6 +172,10 @@ function formatDate(iso) {
   return d.toLocaleDateString(undefined, { dateStyle: "medium" });
 }
 
+function goToArticle(id) {
+  router.push({ name: "article", params: { id: String(id) } });
+}
+
 async function refreshArticles() {
   await articlesStore.fetchArticles(1, 20);
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -218,6 +219,10 @@ async function handleSignOut() {
   transition:
     box-shadow 0.2s ease,
     border-color 0.2s ease;
+}
+
+.article-card__inner {
+  cursor: pointer;
 }
 
 .article-card__inner:hover {

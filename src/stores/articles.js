@@ -62,6 +62,26 @@ export const useArticlesStore = defineStore("articles", () => {
     await fetchArticles(currentPage.value + 1, pageSize.value);
   }
 
+  /** Fetch a single article by id with sport, media, and tags. */
+  async function fetchArticle(id) {
+    if (!isSupabaseConfigured) return null;
+    loading.value = true;
+    try {
+      const { data, error } = await supabase
+        .from("articles")
+        .select(
+          "*, sports(name), article_media(*), article_tags(*, tag_types(name))",
+        )
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     articles,
     loading,
@@ -72,5 +92,6 @@ export const useArticlesStore = defineStore("articles", () => {
     hasMore,
     fetchArticles,
     fetchNextPage,
+    fetchArticle,
   };
 });
